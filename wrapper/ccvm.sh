@@ -119,6 +119,14 @@ case "${CCVM_AUTOUPDATE:-}" in
 esac
 [[ -n $MODE_OVERRIDE ]] && MODE="$MODE_OVERRIDE"
 
+# Host-config sharing precedence: CCVM_SHARE_CONFIG overrides the baked default
+# (shareHostConfig, now true by default). Lets `CCVM_SHARE_CONFIG=0 ccvm` opt out — or
+# `=1` opt back in — on any invocation, without rebuilding the package.
+case "${CCVM_SHARE_CONFIG:-}" in
+  1 | true | yes) SHARECONFIG=1 ;;
+  0 | false | no) SHARECONFIG=0 ;;
+esac
+
 # ---- preflight -------------------------------------------------------------
 WORKDIR="$PWD"
 [[ -d $WORKDIR ]] || die "current directory '$WORKDIR' is not a directory"

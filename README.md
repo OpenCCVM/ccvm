@@ -77,7 +77,7 @@ you log in with lives only in the VM and is gone on exit.
   programs.ccvm = {
     enable = true;
     # autoUpdateFiles = false;           # opt into the read-only safety net (default: true)
-    # shareHostConfig = true;            # reuse your host ~/.claude (login, settings, commands)
+    # shareHostConfig = false;           # stop reusing your host ~/.claude (default: true)
     # extraPackages = with pkgs; [ go gopls python3 ];  # project toolchains
   };
 }
@@ -112,7 +112,7 @@ Those `ccvm` flags are intercepted by the wrapper and are **not** forwarded to c
 | `extraPackages` | `[ ]` | Extra tools inside the VM (a sensible base set is always present). |
 | `mountHostNixStore` | `false` | Share host `/nix/store` (ro) instead of a self-contained image — smaller/faster, less isolated. |
 | `apiKeyVariable` | `"ANTHROPIC_API_KEY"` | Host env var carrying the key; passed only via SSH `SendEnv`. |
-| `shareHostConfig` | `false` | Mount the host `~/.claude` (ro) so the VM reuses your login, settings, commands and memory; writes stay ephemeral. |
+| `shareHostConfig` | `true` | Mount the host `~/.claude` (ro) so the VM reuses your login, settings, commands and memory (home-manager symlinks are dereferenced); writes stay ephemeral. Per-run: `CCVM_SHARE_CONFIG=0\|1`. |
 | `extraGuestModules` | `[ ]` | Extra NixOS modules merged into the guest (escape hatch). |
 
 ### Runtime environment knobs
@@ -121,6 +121,7 @@ Those `ccvm` flags are intercepted by the wrapper and are **not** forwarded to c
 |---|---|
 | `ccvm --auto-update-files` / `--no-auto-update-files` | Force file-sharing mode for one run (wins over `CCVM_AUTOUPDATE`); intercepted, not forwarded to claude. |
 | `CCVM_AUTOUPDATE=1\|0` | Override the file-sharing mode for one run. |
+| `CCVM_SHARE_CONFIG=1\|0` | Override host `~/.claude` sharing for one run (wins over the baked `shareHostConfig`). |
 | `CCVM_SHELL=1` / `ccvm --shell` | Drop into a debug **zsh** in the guest instead of claude. |
 | `CCVM_DEBUG=1` / `ccvm --ccvm-debug` | Stream the guest console while booting; keep the scratch dir on exit. |
 | `CCVM_ACCEL=tcg` | Force software emulation (for hosts where `/dev/kvm` exists but is broken). |

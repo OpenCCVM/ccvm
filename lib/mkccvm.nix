@@ -21,7 +21,7 @@ let
     extraPackages = [ ];
     mountHostNixStore = false;
     apiKeyVariable = "ANTHROPIC_API_KEY";
-    shareHostConfig = false;
+    shareHostConfig = true;
     extraGuestModules = [ ];
   };
 in

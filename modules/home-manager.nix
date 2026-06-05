@@ -69,12 +69,15 @@ in
 
     shareHostConfig = lib.mkOption {
       type = lib.types.bool;
-      default = false;
+      default = true;
       description = ''
-        Read-only mount the host's ~/.claude config into the VM (and copy ~/.claude.json),
-        so it reuses your host login, settings, custom commands and global memory instead of
-        authenticating fresh. Claude's writes go to an ephemeral overlay and do not persist
-        back to the host. Reduces isolation.
+        true (default): read-only mount the host's ~/.claude config into the VM (and copy
+        ~/.claude.json), so it reuses your host login, settings, custom commands and global
+        memory instead of authenticating fresh — like native `claude`. home-manager symlinks
+        (e.g. settings.json -> /nix/store/…) are dereferenced so they resolve inside the VM.
+        Claude's writes go to an ephemeral overlay and do not persist back to the host; the
+        OAuth credential is exposed read-only and never copied to disk. false: share nothing
+        from ~/.claude (more isolated). Per-run override: `CCVM_SHARE_CONFIG=0|1`.
       '';
     };
 

@@ -168,9 +168,11 @@ in the environment. `ps`, `/proc/<pid>/cmdline`, and the scratch dir never see i
 (put a literal `VAR=value` on the ssh command line), precisely because `SetEnv` would
 place the secret in argv.
 
-`shareHostConfig = true` is the other way to authenticate: it surfaces the host's
-`~/.claude` (settings, custom commands, global memory, and the OAuth credential) inside the
-VM as the read-only **lower** of an overlay, with a tmpfs **upper** for claude's own writes.
+`shareHostConfig` (**on by default**, so ccvm mirrors native `claude`) is the other way to
+authenticate: it surfaces the host's `~/.claude` (settings, custom commands, global memory,
+and the OAuth credential) inside the VM as the read-only **lower** of an overlay, with a
+tmpfs **upper** for claude's own writes. Set `CCVM_SHARE_CONFIG=0` to disable it for one run
+(or `=1` to force it on); the env var overrides the baked `shareHostConfig` default.
 The OAuth credential therefore rides the read-only 9p mount and is **never copied into the
 scratch dir or the seed** — only the non-secret home-root `~/.claude.json` is staged through
 the seed and installed into the writable home. Claude's writes (including token refreshes)
@@ -187,9 +189,9 @@ secret), and only escaping links are dereferenced — internal relative links al
 the mount. This is what makes a home-manager-managed config readable in the VM regardless of
 whether the host `/nix/store` is shared.
 
-A key is **not required**, though. With neither `ANTHROPIC_API_KEY` set nor
-`shareHostConfig` enabled, the wrapper warns (it no longer aborts) and starts claude
-unauthenticated, so the in-VM **`/login` web-auth flow** works: claude prints an
+A key is **not required**, though. With no `ANTHROPIC_API_KEY` set and `shareHostConfig`
+turned off (or no host `~/.claude` to share), the wrapper warns (it no longer aborts) and
+starts claude unauthenticated, so the in-VM **`/login` web-auth flow** works: claude prints an
 authorization URL, you open it in your host browser and paste the resulting code back into
 the TUI. No inbound connection to the guest is needed (the code is pasted, not delivered to
 a callback), so nothing about the network model changes. The credentials claude writes to
