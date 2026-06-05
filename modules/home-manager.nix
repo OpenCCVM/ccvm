@@ -10,7 +10,7 @@ let
   ccvmPkg = (mkCcvm {
     inherit (cfg)
       package autoUpdateFiles memory cores extraPackages mountHostNixStore
-      apiKeyVariable shareHostCredentials extraGuestModules;
+      apiKeyVariable shareHostConfig extraGuestModules;
   }).wrapper;
 in
 {
@@ -26,11 +26,13 @@ in
 
     autoUpdateFiles = lib.mkOption {
       type = lib.types.bool;
-      default = false;
+      default = true;
       description = ''
-        false (default, secure): the host project is read-only to the agent; edits are
-        ephemeral and vanish on exit; export via `git push`. true: the host project is
-        mounted read-write; edits land on the host live — identical to native `claude`.
+        true (default): the host project is mounted read-write; edits land on the host
+        live — identical to native `claude`. false (secure): the host project is read-only
+        to the agent; edits are ephemeral and vanish on exit; export via `git push`.
+        Per-run override: `ccvm --no-auto-update-files` / `--auto-update-files`, or
+        `CCVM_AUTOUPDATE=0|1`.
       '';
     };
 
@@ -65,10 +67,15 @@ in
       description = "Name of the host env var carrying the Anthropic API key. Passed to the VM only over the encrypted SSH channel (SendEnv); never written to disk or argv.";
     };
 
-    shareHostCredentials = lib.mkOption {
+    shareHostConfig = lib.mkOption {
       type = lib.types.bool;
       default = false;
-      description = "Read-only mount host Claude credentials into the VM (for OAuth login instead of an API key). Token refresh will not persist back. Reduces isolation.";
+      description = ''
+        Read-only mount the host's ~/.claude config into the VM (and copy ~/.claude.json),
+        so it reuses your host login, settings, custom commands and global memory instead of
+        authenticating fresh. Claude's writes go to an ephemeral overlay and do not persist
+        back to the host. Reduces isolation.
+      '';
     };
 
     extraGuestModules = lib.mkOption {

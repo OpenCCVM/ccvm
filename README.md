@@ -4,9 +4,9 @@
 
 `ccvm` boots an ephemeral QEMU virtual machine and drops you straight into the normal
 Claude Code TUI — same terminal, same keys, same everything — except the agent is now
-operating inside a disposable, RAM-only NixOS that **can't touch your real machine**.
-When you quit, the VM's memory is freed and nothing it did survives. There is no disk to
-clean up.
+operating inside a disposable, RAM-only NixOS that **can't touch your real machine** beyond
+the one project you're working in. When you quit, the VM's memory is freed; there is no
+disk to clean up.
 
 It's the spiritual sibling of a disposable sandbox: `cd` into a project, type `ccvm`
 instead of `claude`, and work exactly as you would natively — but with a hard isolation
@@ -25,14 +25,17 @@ ccvm                      # ← instead of `claude`
 lets the agent run anything against your actual filesystem. ccvm makes that safe by moving
 the agent into a VM:
 
-- **Your project is read-only by default.** The agent sees and edits a full working tree,
-  but every change lands in the VM's RAM and evaporates on exit. Export what you want with
-  `git push`. Flip one switch (`autoUpdateFiles = true`) to get live, native read-write.
+- **Native by default, lockable on demand.** Out of the box the agent edits your project
+  live, exactly like native `claude`. Want a hard safety net? Set `autoUpdateFiles = false`
+  (or run `ccvm --no-auto-update-files`): the project goes read-only, every edit lands in
+  the VM's RAM and evaporates on exit, and you export what you want with `git push`.
 - **The rest of your machine is invisible.** Only the current directory is shared. No
   `~/.ssh`, no `~/.aws`, no home directory.
 - **Your API key never hits disk.** It travels only inside the encrypted SSH channel —
   never on the kernel cmdline, in a QEMU argument, or in any file.
-- **Nothing persists.** Crash, kill, `Ctrl-C`, dropped connection — all leave zero trace.
+- **The VM leaves no trace.** Crash, kill, `Ctrl-C`, dropped connection — the machine and
+  all of its RAM are gone. The only thing that can outlive a session is edits to your
+  project directory, and only while you allow it (turn it off to keep even those ephemeral).
 
 Because the VM is the safety boundary, `--dangerously-skip-permissions` is safe to use
 here — but ccvm doesn't force it on you. It launches Claude with **no extra flags**; opt
@@ -73,7 +76,8 @@ you log in with lives only in the VM and is gone on exit.
 
   programs.ccvm = {
     enable = true;
-    # autoUpdateFiles = true;            # opt into live host edits (see below)
+    # autoUpdateFiles = false;           # opt into the read-only safety net (default: true)
+    # shareHostConfig = true;            # reuse your host ~/.claude (login, settings, commands)
     # extraPackages = with pkgs; [ go gopls python3 ];  # project toolchains
   };
 }
@@ -87,10 +91,12 @@ That puts a persistent `ccvm` command on your `PATH`.
 
 | `autoUpdateFiles` | Host project | Edits | Use when |
 |---|---|---|---|
-| `false` *(default)* | **read-only** | land in VM RAM, vanish on exit | you want a hard safety net; export via `git push` |
-| `true` | **read-write** | land on the host **live** | you want native behaviour and trust the task |
+| `true` *(default)* | **read-write** | land on the host **live** | you want native behaviour (mirrors `claude`) |
+| `false` | **read-only** | land in VM RAM, vanish on exit | you want a hard safety net; export via `git push` |
 
-Per-invocation override without changing config: `CCVM_AUTOUPDATE=1 ccvm`.
+Per-invocation override without changing config — highest precedence first:
+`ccvm --no-auto-update-files` / `ccvm --auto-update-files`, then `CCVM_AUTOUPDATE=0|1 ccvm`.
+Those `ccvm` flags are intercepted by the wrapper and are **not** forwarded to claude.
 
 ---
 
@@ -100,19 +106,20 @@ Per-invocation override without changing config: `CCVM_AUTOUPDATE=1 ccvm`.
 |---|---|---|
 | `enable` | `false` | Install the `ccvm` command. |
 | `package` | `pkgs.claude-code` | The claude-code package to run in the VM. |
-| `autoUpdateFiles` | `false` | Read-write host project vs. ephemeral overlay (above). |
+| `autoUpdateFiles` | `true` | Read-write host project (live, like native `claude`) vs. ephemeral overlay (above). |
 | `memory` | `4096` | VM RAM, MiB. |
 | `cores` | `4` | VM vCPUs. |
 | `extraPackages` | `[ ]` | Extra tools inside the VM (a sensible base set is always present). |
 | `mountHostNixStore` | `false` | Share host `/nix/store` (ro) instead of a self-contained image — smaller/faster, less isolated. |
 | `apiKeyVariable` | `"ANTHROPIC_API_KEY"` | Host env var carrying the key; passed only via SSH `SendEnv`. |
-| `shareHostCredentials` | `false` | Mount `~/.claude` (ro) for OAuth instead of an API key (token refresh won't persist). |
+| `shareHostConfig` | `false` | Mount the host `~/.claude` (ro) so the VM reuses your login, settings, commands and memory; writes stay ephemeral. |
 | `extraGuestModules` | `[ ]` | Extra NixOS modules merged into the guest (escape hatch). |
 
 ### Runtime environment knobs
 
 | Var | Effect |
 |---|---|
+| `ccvm --auto-update-files` / `--no-auto-update-files` | Force file-sharing mode for one run (wins over `CCVM_AUTOUPDATE`); intercepted, not forwarded to claude. |
 | `CCVM_AUTOUPDATE=1\|0` | Override the file-sharing mode for one run. |
 | `CCVM_SHELL=1` / `ccvm --shell` | Drop into a debug **zsh** in the guest instead of claude. |
 | `CCVM_DEBUG=1` / `ccvm --ccvm-debug` | Stream the guest console while booting; keep the scratch dir on exit. |
@@ -155,7 +162,7 @@ Then sanity-check, all of which should feel exactly like your host shell:
 - [ ] zsh vi-mode: `Esc` then `k`/`j` to move through history, `cw` etc.
 - [ ] Colours and Unicode render correctly.
 
-And the isolation, with `autoUpdateFiles = false` (default):
+And the read-only safety net — launch with `ccvm --no-auto-update-files`:
 
 - [ ] Inside: `echo hi > scratch && ls`. Outside, on the host: the file is **not** there.
 
@@ -165,7 +172,8 @@ And the isolation, with `autoUpdateFiles = false` (default):
 
 - **x86_64-linux** is the primary, CI-built target; **aarch64-linux** is best-effort
   (evaluates and is wired up).
-- OAuth token refresh (`shareHostCredentials`) does not persist back to the host.
+- `shareHostConfig` is read-only: changes the in-VM Claude makes to its config (including
+  OAuth token refreshes) stay in the VM and do not persist back to the host.
 
 ## License
 

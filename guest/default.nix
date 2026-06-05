@@ -34,10 +34,10 @@ in
       default = [ ];
       description = "Extra packages available inside the guest.";
     };
-    shareHostCredentials = lib.mkOption {
+    shareHostConfig = lib.mkOption {
       type = lib.types.bool;
       default = false;
-      description = "Mount host Claude credentials read-only (OAuth login instead of API key).";
+      description = "Share the host's ~/.claude config read-only (reuse host login, settings, commands, memory).";
     };
     mountHostNixStore = lib.mkOption {
       type = lib.types.bool;

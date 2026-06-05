@@ -97,18 +97,27 @@ let
           "$workdir"
       fi
 
-      # Optional OAuth path: copy host credentials into a writable ~/.claude so claude can
-      # still write its own state. Best-effort, read-once: token refresh stays in the
-      # ephemeral tmpfs and does not persist back to the host (documented limitation).
-      if [ -f "$seed/creds" ]; then
+      # Optional host-config path: surface the host's ~/.claude (settings, custom commands,
+      # global memory, OAuth credential) inside the VM as the read-only lower of an overlay,
+      # with a tmpfs upper for claude's own writes — so its state is usable but ephemeral and
+      # never persists back to the host. The home-root ~/.claude.json is staged via the seed
+      # (it is config, not the secret token) and installed into the writable home.
+      if [ -f "$seed/share-config" ]; then
         mkdir -p /run/ccvm-host-claude
-        if mount -t 9p -o ${p9},ro ccvm-creds /run/ccvm-host-claude 2>/dev/null; then
+        if mount -t 9p -o ${p9},ro ccvm-config /run/ccvm-host-claude 2>/dev/null; then
           install -d -m 700 -o ccvm -g users /home/ccvm/.claude
-          for f in .credentials.json .claude.json; do
-            [ -f "/run/ccvm-host-claude/$f" ] &&
-              install -m 600 -o ccvm -g users "/run/ccvm-host-claude/$f" "/home/ccvm/.claude/$f"
-          done
+          mkdir -p /run/ccvm-claude-upper /run/ccvm-claude-work
+          chown ccvm:users /run/ccvm-claude-upper /run/ccvm-claude-work
+          mount -t overlay overlay \
+            -o lowerdir=/run/ccvm-host-claude,upperdir=/run/ccvm-claude-upper,workdir=/run/ccvm-claude-work \
+            /home/ccvm/.claude
         fi
+      fi
+      # An `if` (not a trailing `[ -f … ] && …`): under `set -e` a bare conditional as the
+      # script's final statement makes the whole oneshot exit non-zero when the file is
+      # absent — the common case — which would fail ccvm-seed.service and block sshd.
+      if [ -f "$seed/claude-json" ]; then
+        install -m 600 -o ccvm -g users "$seed/claude-json" /home/ccvm/.claude.json
       fi
     '';
   };

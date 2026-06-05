@@ -18,16 +18,20 @@ This document explains *why* it is built the way it is. For how to use it, see t
    verbatim. This is the contract; everything else bends to preserve it.
 2. **Ephemeral by construction.** No persistent disk image anywhere. Power-off is the
    only cleanup. A crash, a kill, a dropped connection — all leave zero trace.
-3. **Secure by default.** The host project is *read-only* to the agent unless you opt
-   in. The Anthropic API key never touches disk, argv or the kernel cmdline. The VM is
-   the trust boundary, which is what makes `--dangerously-skip-permissions` safe to opt
-   into — ccvm passes no flags of its own; you add that one yourself when you want it.
+3. **The VM is the trust boundary.** The rest of the host is invisible — only the project
+   directory is shared — and the Anthropic API key never touches disk, argv or the kernel
+   cmdline. That boundary is what makes `--dangerously-skip-permissions` safe to opt into;
+   ccvm passes no flags of its own, so you add that one yourself when you want it. A
+   file-level safety net sits on top and is opt-in: `autoUpdateFiles = false` makes the
+   project read-only too, so even edits stay in the VM (§3.6).
 4. **Zero host setup.** `nix run github:jx-wi/ccvm` from any flakes-enabled NixOS box,
    or add the home-manager module for a persistent `ccvm` command.
 
 ### Non-goals
 
-- Persistence of any kind (use `git push` from inside, or `autoUpdateFiles = true`).
+- Persistence of the VM's own state (installed tools, root fs — all RAM, all discarded).
+  Your *project* edits are a separate matter: live on the host by default, or `git push`
+  from inside when running under the read-only safety net.
 - A general-purpose VM manager. ccvm builds exactly one guest and boots it one way.
 - Defending the *host* against a malicious *guest kernel*. The boundary is QEMU; we
   assume QEMU's device/Virtio isolation holds. We do defend the host filesystem and
@@ -129,19 +133,27 @@ are never rebuilt by word-splitting.
 
 The API key is **deliberately not in the seed** (§3.7).
 
-### 3.6 File-sharing modes: overlay (default) vs rw
+### 3.6 File-sharing modes: rw (default) vs overlay
 
 The host CWD is shared over 9p and **mounted at the identical absolute path** inside the
 guest, so any path the agent prints or writes matches the host's mental model.
 
-- **`autoUpdateFiles = false` (default, secure): overlay.** The host tree is the
+- **`autoUpdateFiles = true` (default): read-write passthrough.** The host CWD is mounted
+  read-write; edits land on the host live — identical to running `claude` natively. With
+  `security_model=none`, files are created with real host uid/gid (no `.virtfs_metadata`
+  litter), because the guest `ccvm` user is uid 1000 to match a typical host user. This
+  mirrors native `claude`, which is why it is the default.
+- **`autoUpdateFiles = false`: overlay (the safety net).** The host tree is the
   read-only **lower** of an overlayfs; a tmpfs is the **upper**. The agent sees and edits
   a full working tree, but every write lands in guest RAM. The host project is never
   modified; on exit the edits evaporate. Export deliberately via `git push`.
-- **`autoUpdateFiles = true`: read-write passthrough.** The host CWD is mounted
-  read-write; edits land on the host live — identical to running `claude` natively. With
-  `security_model=none`, files are created with real host uid/gid (no `.virtfs_metadata`
-  litter), because the guest `ccvm` user is uid 1000 to match a typical host user.
+
+The mode is resolved at launch, highest precedence first: the per-run flags
+`ccvm --no-auto-update-files` / `--auto-update-files` (intercepted by the wrapper and
+**not** forwarded to claude), then `CCVM_AUTOUPDATE=0|1`, then the baked-in
+`autoUpdateFiles` default. The flags win, so you can flip either way for a single run
+without touching config — and because they are consumed by the wrapper, claude still
+receives only the user's own arguments.
 
 ### 3.7 Secret handling: the API key rides the SSH channel only
 
@@ -156,12 +168,16 @@ in the environment. `ps`, `/proc/<pid>/cmdline`, and the scratch dir never see i
 (put a literal `VAR=value` on the ssh command line), precisely because `SetEnv` would
 place the secret in argv.
 
-For OAuth users, `shareHostCredentials = true` instead mounts `~/.claude` read-only and
-copies it into a writable guest `~/.claude`; token refreshes stay in the ephemeral tmpfs
-and do not persist back (a documented trade-off).
+`shareHostConfig = true` is the other way to authenticate: it surfaces the host's
+`~/.claude` (settings, custom commands, global memory, and the OAuth credential) inside the
+VM as the read-only **lower** of an overlay, with a tmpfs **upper** for claude's own writes.
+The OAuth credential therefore rides the read-only 9p mount and is **never copied into the
+scratch dir or the seed** — only the non-secret home-root `~/.claude.json` is staged through
+the seed and installed into the writable home. Claude's writes (including token refreshes)
+land in the tmpfs upper and do not persist back to the host.
 
 A key is **not required**, though. With neither `ANTHROPIC_API_KEY` set nor
-`shareHostCredentials` enabled, the wrapper warns (it no longer aborts) and starts claude
+`shareHostConfig` enabled, the wrapper warns (it no longer aborts) and starts claude
 unauthenticated, so the in-VM **`/login` web-auth flow** works: claude prints an
 authorization URL, you open it in your host browser and paste the resulting code back into
 the TUI. No inbound connection to the guest is needed (the code is pasted, not delivered to
@@ -199,7 +215,7 @@ off any real network and nothing should be reaching *in* except the forwarded po
 1. Parse args: peel off ccvm-only flags (`--shell`, `--ccvm-debug`); everything else is
    forwarded to claude. Resolve mode (overlay/rw) and acceleration (KVM if usable, else
    TCG; `CCVM_ACCEL=tcg` forces software emulation for broken nested-virt hosts).
-2. Check auth: if no API key and no shared host credentials, warn (don't abort) so the
+2. Check auth: if no API key and no shared host config, warn (don't abort) so the
    in-VM `/login` web-auth flow can run.
 3. Make a scratch dir under `$XDG_RUNTIME_DIR`; arm a single `trap cleanup EXIT INT TERM
    HUP`.
@@ -247,4 +263,6 @@ session itself ends.
   see the README checklist.
 - **aarch64-linux is best-effort.** It evaluates and is wired up, but the primary,
   CI-built target is x86_64-linux.
-- **OAuth token refresh does not persist** back to the host (§3.7).
+- **`shareHostConfig` is read-only.** The in-VM Claude's writes to its config — including
+  OAuth token refreshes — stay in the ephemeral overlay and do not persist back to the
+  host (§3.7).

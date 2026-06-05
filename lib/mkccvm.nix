@@ -15,13 +15,13 @@ let
 
   defaults = {
     package = pkgs.claude-code;
-    autoUpdateFiles = false;
+    autoUpdateFiles = true;
     memory = 4096;
     cores = 4;
     extraPackages = [ ];
     mountHostNixStore = false;
     apiKeyVariable = "ANTHROPIC_API_KEY";
-    shareHostCredentials = false;
+    shareHostConfig = false;
     extraGuestModules = [ ];
   };
 in
@@ -38,7 +38,7 @@ let
         nixpkgs.pkgs = pkgs;
         ccvm = {
           inherit (config) apiKeyVariable extraPackages
-            shareHostCredentials mountHostNixStore;
+            shareHostConfig mountHostNixStore;
           claudePackage = config.package;
         };
       }
@@ -76,7 +76,7 @@ let
         "@CORES@"
         "@MODE@"
         "@APIKEYVAR@"
-        "@SHAREHOSTCREDS@"
+        "@SHARECONFIG@"
         "@MOUNTHOSTSTORE@"
         "@HOSTSTOREPATH@"
       ]
@@ -89,7 +89,7 @@ let
         (toString config.cores)
         (if config.autoUpdateFiles then "rw" else "overlay")
         config.apiKeyVariable
-        (if config.shareHostCredentials then "1" else "0")
+        (if config.shareHostConfig then "1" else "0")
         (if config.mountHostNixStore then "1" else "0")
         (builtins.storeDir)
       ]

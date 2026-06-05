@@ -19,10 +19,10 @@ APPEND="@APPEND@"
 MEMORY="@MEMORY@"
 CORES="@CORES@"
 APIKEYVAR="@APIKEYVAR@"
-SHAREHOSTCREDS="@SHAREHOSTCREDS@"
+SHARECONFIG="@SHARECONFIG@"
 MOUNTHOSTSTORE="@MOUNTHOSTSTORE@"
 HOSTSTOREPATH="@HOSTSTOREPATH@"
-MODE="@MODE@" # rw (autoUpdateFiles=true) | overlay (default, secure)
+MODE="@MODE@" # rw (autoUpdateFiles=true, default — mirrors native claude) | overlay (secure)
 
 # ---- helpers ---------------------------------------------------------------
 warn() { printf 'ccvm: %s\n' "$*" >&2; }
@@ -97,20 +97,27 @@ wait_for_boot() {
 SHELL_MODE=0
 DEBUG="${CCVM_DEBUG:-0}"
 [[ ${CCVM_SHELL:-0} == 1 ]] && SHELL_MODE=1
+MODE_OVERRIDE=""
 FWD=()
 for arg in "$@"; do
   case "$arg" in
     --shell) SHELL_MODE=1 ;;
     --ccvm-debug) DEBUG=1 ;;
+    # ccvm-only file-sharing toggles. Consumed here (never appended to FWD), so they are
+    # NOT forwarded to claude — claude still receives only the user's own arguments.
+    --auto-update-files) MODE_OVERRIDE=rw ;;
+    --no-auto-update-files) MODE_OVERRIDE=overlay ;;
     *) FWD+=("$arg") ;;
   esac
 done
 
-# Optional per-invocation override of the file-sharing mode.
+# File-sharing mode precedence: an explicit ccvm flag wins, else the CCVM_AUTOUPDATE env
+# var, else the baked default (autoUpdateFiles, now true by default).
 case "${CCVM_AUTOUPDATE:-}" in
   1 | true | yes) MODE=rw ;;
   0 | false | no) MODE=overlay ;;
 esac
+[[ -n $MODE_OVERRIDE ]] && MODE="$MODE_OVERRIDE"
 
 # ---- preflight -------------------------------------------------------------
 WORKDIR="$PWD"
@@ -133,11 +140,11 @@ fi
 
 # Auth is optional. If present, the API key rides the encrypted SSH channel via
 # SendEnv -> AcceptEnv — never on disk or argv. With neither a key nor shared host
-# credentials, claude simply starts unauthenticated: run its in-VM `/login` (web/OAuth)
+# config, claude simply starts unauthenticated: run its in-VM `/login` (web/OAuth)
 # flow — copy the printed URL into your browser, paste the code back. Anything obtained
 # that way lives only in the VM's tmpfs and evaporates on exit (ephemeral, by design).
-if [[ $SHELL_MODE != 1 && $SHAREHOSTCREDS != 1 && -z ${!APIKEYVAR:-} ]]; then
-  warn "\$$APIKEYVAR is not set and shareHostCredentials is off — starting Claude unauthenticated. Run /login inside the VM for web auth (its credentials stay in the VM and vanish on exit)."
+if [[ $SHELL_MODE != 1 && $SHARECONFIG != 1 && -z ${!APIKEYVAR:-} ]]; then
+  warn "\$$APIKEYVAR is not set and shareHostConfig is off — starting Claude unauthenticated. Run /login inside the VM for web auth (its credentials stay in the VM and vanish on exit)."
 fi
 
 # ---- scratch dir + trap ----------------------------------------------------
@@ -200,12 +207,20 @@ fi
 WS_FSDEV="local,id=ws,path=$WORKDIR,security_model=none"
 [[ $MODE == overlay ]] && WS_FSDEV="$WS_FSDEV,readonly=on"
 
-# Optional: host Claude credentials, read-only (OAuth instead of API key).
-CRED_ARGS=()
-if [[ $SHAREHOSTCREDS == 1 && -d "$HOME/.claude" ]]; then
-  CRED_ARGS+=(-fsdev "local,id=creds,path=$HOME/.claude,security_model=none,readonly=on")
-  CRED_ARGS+=(-device "virtio-9p-$BUS,fsdev=creds,mount_tag=ccvm-creds")
-  printf '1' >"$SEED/creds"
+# Optional: the host's Claude config, read-only — reuse your host login, settings, custom
+# commands and global memory inside the VM. The ~/.claude directory rides a read-only 9p
+# mount, so the OAuth credential it contains is never copied into the scratch dir. The
+# separate home-root ~/.claude.json (non-secret config) is staged through the seed. The
+# guest overlays both onto a writable tmpfs, so claude's writes are ephemeral and never
+# reach the host.
+CONFIG_ARGS=()
+if [[ $SHARECONFIG == 1 ]]; then
+  if [[ -d "$HOME/.claude" ]]; then
+    CONFIG_ARGS+=(-fsdev "local,id=cfg,path=$HOME/.claude,security_model=none,readonly=on")
+    CONFIG_ARGS+=(-device "virtio-9p-$BUS,fsdev=cfg,mount_tag=ccvm-config")
+    printf '1' >"$SEED/share-config"
+  fi
+  [[ -f "$HOME/.claude.json" ]] && cp "$HOME/.claude.json" "$SEED/claude-json"
 fi
 
 QEMU_ARGS=(
@@ -223,7 +238,7 @@ QEMU_ARGS=(
   -device "virtio-9p-$BUS,fsdev=seed,mount_tag=ccvm-seed"
   -fsdev "$WS_FSDEV"
   -device "virtio-9p-$BUS,fsdev=ws,mount_tag=ccvm-workspace"
-  "${CRED_ARGS[@]}"
+  "${CONFIG_ARGS[@]}"
   -device "virtio-rng-$BUS"
   -display none
   -monitor none
