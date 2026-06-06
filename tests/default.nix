@@ -59,6 +59,11 @@ let
 
   dryRunWrapper = mkDryRunWrapper { };
   egressWrapper = mkDryRunWrapper { egressAllow = "10.0.0.0/8"; egressPorts = "80 443"; };
+  # FQDN-only allowlist (no literal IPs): offline it resolves to nothing, so the wrapper must
+  # fail closed (die) rather than boot with an unenforceable allowlist. `.invalid` (RFC 6761)
+  # never resolves, so even with network only api.anthropic.com could populate the set — the
+  # test self-gates on DNS availability.
+  egressFqdnWrapper = mkDryRunWrapper { egressAllow = "nothing.invalid"; };
 in
 {
   host = pkgs.runCommand "ccvm-host-tests"
@@ -73,10 +78,11 @@ in
 
   egress = pkgs.runCommand "ccvm-egress-tests"
     {
-      nativeBuildInputs = [ pkgs.bash pkgs.getent egressWrapper ];
+      nativeBuildInputs = [ pkgs.bash pkgs.getent egressWrapper egressFqdnWrapper ];
     }
     ''
       export CCVM=${egressWrapper}/bin/ccvm
+      export CCVM_FQDNONLY=${egressFqdnWrapper}/bin/ccvm
       bash ${./egress.sh}
       touch "$out"
     '';

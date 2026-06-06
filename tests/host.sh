@@ -149,10 +149,12 @@ SEED="$(HOME="$FAKE_HOME" CCVM_SHARE_CONFIG=0 run)/seed"
 [[ "$(cat "$SEED/mode")" == rw ]] && ok "default mode is rw (native mirroring)" ||
   no "default mode not rw (got $(cat "$SEED/mode"))"
 
-# With no baked egress allowlist (this wrapper), egress stays OPEN: no firewall files are
-# written to the seed, so the guest installs no OUTPUT filter (native default).
-[[ ! -e "$SEED/egress-allow" ]] && ok "default: open egress (no allowlist staged)" ||
-  no "egress-allow staged with an empty allowlist"
+# With no baked egress allowlist (this wrapper), egress stays OPEN: neither the allow set nor
+# the enforce marker is written, so the guest installs no OUTPUT filter (native default). The
+# marker is what the guest gates on, so its absence is the real "open egress" guarantee.
+[[ ! -e "$SEED/egress-allow" && ! -e "$SEED/egress-enforce" ]] &&
+  ok "default: open egress (no allowlist or enforce marker staged)" ||
+  no "egress firewall staged with an empty allowlist (allow=$([[ -e "$SEED/egress-allow" ]] && echo y || echo n) enforce=$([[ -e "$SEED/egress-enforce" ]] && echo y || echo n))"
 
 # ===========================================================================
 # 5. Static: the wrapper uses SendEnv (in-channel) and never SetEnv (argv).

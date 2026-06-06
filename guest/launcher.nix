@@ -128,47 +128,74 @@ let
         fi
       fi
       # Opt-in egress allowlist. The host (which has working DNS) resolved the configured
-      # FQDNs into IPs and wrote them to seed/egress-allow; an absent/empty file means open
-      # egress — the native default — and we install no firewall at all. When present, apply
-      # a default-deny OUTPUT firewall permitting only those destinations on the listed ports,
-      # plus loopback, conntrack replies (so the inbound ssh session keeps working), DNS, and
-      # DHCP renewal. `nft -f` is atomic, so on a syntax/apply failure nothing is installed —
-      # we then fail CLOSED (install a bare deny-all OUTPUT chain) rather than silently leave
-      # egress wide open, since a broken allowlist must never degrade into "no containment".
-      if [ -s "$seed/egress-allow" ]; then
+      # FQDNs into IPs and wrote them to seed/egress-allow; seed/egress-enforce is the
+      # "lock down" marker. An ABSENT marker means open egress — the native default — and we
+      # install no firewall. When the marker is PRESENT we apply a default-deny OUTPUT
+      # firewall permitting only the allowlisted destinations on the listed ports, plus a set
+      # of base rules (below). Critically we gate on the marker, NOT on a non-empty allow set,
+      # so even an empty allow set fails CLOSED (deny-all) rather than reverting to open egress
+      # — the allowlist must never degrade into "no containment".
+      if [ -f "$seed/egress-enforce" ]; then
         # Ensure the netfilter modules are present before nft talks to the kernel; without
         # them even the fail-closed fallback below could not install a deny rule.
         modprobe nf_tables nf_conntrack 2>/dev/null || true
         portset="$(cat "$seed/egress-ports" 2>/dev/null || true)"
         [ -n "$portset" ] || portset="443"
         v4="" v6=""
-        while IFS= read -r addr; do
-          [ -n "$addr" ] || continue
-          case "$addr" in
-          *:*) if [ -z "$v6" ]; then v6="$addr"; else v6="$v6, $addr"; fi ;;
-          *) if [ -z "$v4" ]; then v4="$addr"; else v4="$v4, $addr"; fi ;;
-          esac
-        done <"$seed/egress-allow"
+        if [ -f "$seed/egress-allow" ]; then
+          while IFS= read -r addr; do
+            [ -n "$addr" ] || continue
+            case "$addr" in
+            *:*) if [ -z "$v6" ]; then v6="$addr"; else v6="$v6, $addr"; fi ;;
+            *) if [ -z "$v4" ]; then v4="$addr"; else v4="$v4, $addr"; fi ;;
+            esac
+          done <"$seed/egress-allow"
+        fi
+        # Base rules shared by the full ruleset AND the fail-closed fallback. They keep the
+        # box usable and the management ssh alive WITHOUT opening an exfil channel:
+        #   * lo + conntrack replies  -> the inbound ssh session (and DNS replies) keep working
+        #   * DNS only to the slirp stub resolver (10.0.2.3 / fec0::3), NOT to any host — normal
+        #     resolution via systemd-resolved still works, but a compromised agent can't tunnel
+        #     data out to an arbitrary DNS server (DNS through the recursive resolver is the
+        #     residual covert channel an SNI/DNS-filtering proxy would address — see design §3.10)
+        #   * DHCPv4 lease renewal
+        #   * IPv6 NDP (neighbor/router discovery) so IPv6 doesn't black-hole and stall
+        #     happy-eyeballs; without it `policy drop` would silently break v6.
+        emit_base() {
+          echo "    oifname lo accept"
+          echo "    ct state established,related accept"
+          echo "    ip daddr 10.0.2.3 udp dport 53 accept"
+          echo "    ip daddr 10.0.2.3 tcp dport 53 accept"
+          echo "    ip6 daddr fec0::3 udp dport 53 accept"
+          echo "    ip6 daddr fec0::3 tcp dport 53 accept"
+          echo "    udp dport 67 accept" # DHCPv4 lease renewal
+          echo "    icmpv6 type { nd-neighbor-solicit, nd-neighbor-advert, nd-router-solicit, nd-router-advert } accept"
+        }
         {
           echo "table inet ccvm {"
           echo "  chain output {"
           echo "    type filter hook output priority 0; policy drop;"
-          echo "    oifname lo accept"
-          echo "    ct state established,related accept"
-          echo "    udp dport 53 accept"
-          echo "    tcp dport 53 accept"
-          echo "    udp dport 67 accept" # DHCP lease renewal
+          emit_base
           [ -n "$v4" ] && echo "    ip daddr { $v4 } tcp dport { $portset } accept"
           [ -n "$v6" ] && echo "    ip6 daddr { $v6 } tcp dport { $portset } accept"
           echo "  }"
           echo "}"
         } >/run/ccvm-egress.nft
         if ! nft -f /run/ccvm-egress.nft; then
-          # Apply failed: fail CLOSED (deny all egress) rather than silently leaving it open,
-          # so a broken allowlist never degrades into "no containment".
-          echo "ccvm: ERROR: could not apply egress allowlist; failing closed (egress denied)" >&2
-          nft 'add table inet ccvm' 2>/dev/null || true
-          nft 'add chain inet ccvm output { type filter hook output priority 0 ; policy drop ; }' 2>/dev/null || true
+          # Apply failed: fail CLOSED, but keep the base rules so the management ssh session and
+          # DNS survive (deny only NEW egress to the outside). A bare deny-all here would also
+          # drop sshd's own replies — killing the session and hanging the boot — which is worse
+          # than useless: you couldn't even --shell in to see what broke.
+          echo "ccvm: ERROR: could not apply egress allowlist; failing closed (only DNS + the ssh session survive)" >&2
+          {
+            echo "table inet ccvm {"
+            echo "  chain output {"
+            echo "    type filter hook output priority 0; policy drop;"
+            emit_base
+            echo "  }"
+            echo "}"
+          } >/run/ccvm-egress-fallback.nft
+          nft -f /run/ccvm-egress-fallback.nft 2>/dev/null || true
         fi
       fi
 

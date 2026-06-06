@@ -241,31 +241,44 @@ compromised agent can **exfiltrate** the shared project tree — or, under the d
 The on-threat-model answer is an **egress allowlist**, not anonymity, and it is now
 **implemented as an opt-in mode** (`egressAllowlist` / `egressPorts`). An empty list (the
 default) keeps egress fully open; a non-empty list switches the guest to a **default-deny**
-nftables OUTPUT chain that permits only the listed destinations on the listed ports, plus
-loopback, conntrack replies (so the inbound ssh session keeps working), DNS, and DHCP renewal.
-`api.anthropic.com` is always auto-included so auth never breaks. This stays inside ccvm's
+nftables OUTPUT chain that permits only the listed destinations on the listed ports (TCP),
+plus a small base set: loopback, conntrack replies (so the inbound ssh session and DNS
+answers keep working), DNS **only to the slirp stub resolver** (10.0.2.3 / fec0::3), DHCPv4
+renewal, and IPv6 NDP. `api.anthropic.com` is always auto-included. This stays inside ccvm's
 existing model — agent containment + credential hygiene — at zero latency cost.
 
 **Where the work happens.** The allowlist is a per-launch runtime input, so it follows the
 runtime-share split (§3.8), not a baked guest closure value: `egressAllowlist`/`egressPorts`
 are baked into the wrapper as scalars (`@EGRESSALLOW@`/`@EGRESSPORTS@`), but the **host**
 resolves any FQDN entries at launch (it has working DNS), passes IPs/CIDRs through verbatim,
-and writes the resolved set + ports into the **seed**. The guest's `ccvm-seed.service` reads
-the seed and applies the nftables rules before sshd. If `nft -f` fails (atomic — nothing is
-installed on error), the guest **fails closed**: it installs a bare deny-all OUTPUT chain
-rather than degrade into "no containment".
+and writes the resolved set + ports into the **seed** alongside an `egress-enforce` marker.
+The guest's `ccvm-seed.service` enforces the firewall whenever that **marker** is present —
+not merely when the resolved set is non-empty — so an empty set fails closed (deny-all)
+instead of reverting to open egress. Two layers guard the fail-open hole: if the user opts in
+but *nothing* resolves (host DNS down, no literal IPs), the **wrapper refuses to boot** rather
+than run an unenforceable allowlist; and the guest enforces on the marker regardless. If
+`nft -f` fails (atomic — nothing installed on error), the guest **fails closed but keeps the
+base rules** (ssh session + DNS survive) so you can `--shell` in to debug, rather than a bare
+deny-all that would drop sshd's own replies and hang the boot.
 
 ```nix
 programs.ccvm.egressAllowlist = [ "github.com" "registry.npmjs.org" "10.0.0.0/8" ];
 programs.ccvm.egressPorts     = [ 443 ];   # add 80 for plain-HTTP mirrors
 ```
 
-**Known limitation (the MVP).** FQDN entries can't be matched by a stateless packet filter
-directly (the kernel sees IPs), so hostnames are handled by **host-side DNS pre-resolution at
-launch** — pinned A/AAAA records, with the obvious staleness/round-robin caveat for
-CDN-fronted hosts within a long session. The stronger layer — an egress proxy that filters on
-SNI/`Host` (making FQDN rules and an HTTPS-only constraint real guarantees) — is deliberately
-**future work** that layers on top of this IP/CIDR + port MVP.
+**Known limitations (the MVP) — three residual channels the IP-filter MVP can't close,**
+each the job of the future SNI/DNS-filtering proxy that layers on top:
+- **FQDN staleness.** Hostnames can't be matched by a stateless packet filter (the kernel
+  sees IPs), so they're handled by host-side DNS pre-resolution at launch — pinned A/AAAA
+  records, with the round-robin/CDN caveat for a long session. This bites `api.anthropic.com`
+  itself (Cloudflare-fronted): if it rotates to an unpinned edge mid-session, API calls fail —
+  the user restarts or pins a broader CIDR. "Auto-included" guarantees it's *attempted*, not
+  that the pinned IPs stay valid forever.
+- **DNS tunneling.** DNS is restricted to the stub resolver (not arbitrary servers), which
+  blocks direct DNS-to-anywhere, but a determined agent can still tunnel low-bandwidth data
+  through the recursive resolver. Closing this needs a filtering resolver, not a packet filter.
+- **TCP-only.** Only TCP on the listed ports is allowed; QUIC/UDP 443 is dropped and clients
+  fall back to TCP. UDP-only services would need explicit handling.
 
 **Why not Tor.** Routing guest traffic through Tor was considered and rejected. It solves
 network *anonymity*, which is orthogonal to this project: the dominant flow is the Anthropic

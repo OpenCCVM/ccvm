@@ -114,7 +114,7 @@ Those `ccvm` flags are intercepted by the wrapper and are **not** forwarded to c
 | `apiKeyVariable` | `"ANTHROPIC_API_KEY"` | Host env var carrying the key; passed only via SSH `SendEnv`. |
 | `shareHostConfig` | `true` | Mount the host `~/.claude` (ro) so the VM reuses your login, settings, commands and memory (home-manager symlinks are dereferenced); writes stay ephemeral. Per-run: `CCVM_SHARE_CONFIG=0\|1`. |
 | `lockGuestMemory` | `false` | mlock the guest RAM (QEMU `mem-lock=on`) so it can't be paged to the host's (possibly unencrypted) swap — keeps in-VM secrets off persistent storage. Needs sufficient `RLIMIT_MEMLOCK`. Per-run: `CCVM_MLOCK=0\|1`. |
-| `egressAllowlist` | `[ ]` | **Opt-in.** Empty = open egress (native default). Non-empty switches the guest to a default-deny egress firewall allowing only these FQDN/IP/CIDR destinations (+ DNS; `api.anthropic.com` auto-included) — closes the exfiltration channel. See [Threat model & network egress](#threat-model--network-egress). |
+| `egressAllowlist` | `[ ]` | **Opt-in.** Empty = open egress (native default). Non-empty switches the guest to a default-deny egress firewall allowing only these FQDN/IP/CIDR destinations (`api.anthropic.com` auto-included) — closes the *direct* exfiltration channel (DNS-to-stub-resolver stays open as a residual channel). See [Threat model & network egress](#threat-model--network-egress). |
 | `egressPorts` | `[ 443 ]` | Destination ports the allowlist permits (only when `egressAllowlist` is set). Add `80` for plain-HTTP mirrors. |
 | `extraGuestModules` | `[ ]` | Extra NixOS modules merged into the guest (escape hatch). |
 
@@ -189,12 +189,24 @@ is in the VM). Your options, cheapest first:
   ```
 
   A non-empty list switches the guest to a **default-deny** egress firewall (nftables) that
-  permits only those destinations on those ports, plus DNS. `api.anthropic.com` is always
-  auto-included so authentication never breaks. FQDNs are resolved **on the host at launch**
-  into IP rules — reliable for a session, but it IP-pins CDN-fronted hosts (an SNI-filtering
-  proxy is the planned stronger layer; see [design §3.10](docs/design.md)). If the rules fail
-  to apply, the guest **fails closed** (denies all egress) rather than silently leaving it
-  open. Combine with `autoUpdateFiles = false` to also keep project edits in the VM.
+  permits only those destinations on those ports — closing the **direct** HTTP(S)
+  exfiltration channel. `api.anthropic.com` is always auto-included. FQDNs are resolved **on
+  the host at launch** into IP rules — reliable for a session, but it IP-pins CDN-fronted
+  hosts, **including `api.anthropic.com` itself**: if its CDN rotates to an edge IP that
+  wasn't pinned at launch, API calls can fail mid-session — restart, or pin a broader CIDR.
+  Two channels deliberately stay open and are **residual** (an SNI/DNS-filtering proxy is the
+  planned stronger layer — [design §3.10](docs/design.md)):
+  - **DNS**, but only to the VM's stub resolver (not to arbitrary servers), so normal name
+    resolution works while direct DNS-to-anywhere is blocked — a determined agent can still
+    *tunnel* low-bandwidth data through the recursive resolver.
+  - **TCP only** on the listed ports (QUIC/UDP 443 is dropped; clients transparently fall back
+    to TCP).
+
+  If the rules fail to apply, the guest **fails closed**: it denies all new egress but keeps
+  the ssh session and DNS alive so you can `--shell` in to debug. If you opt in but nothing
+  resolves (host DNS down), the wrapper **refuses to boot** rather than run with an
+  unenforceable allowlist. Combine with `autoUpdateFiles = false` to also keep project edits
+  in the VM.
 
 What ccvm deliberately does **not** do is anonymize traffic (no Tor): the dominant flow is the
 Anthropic API authenticated as you, so anonymity is self-defeating and orthogonal. If you want

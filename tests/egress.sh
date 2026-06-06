@@ -63,5 +63,27 @@ fi
 [[ "$(cat "$SEED/egress-ports")" == "80,443" ]] && ok "ports staged as nft comma list" ||
   no "egress-ports wrong: $(cat "$SEED/egress-ports")"
 
+# The lock-down marker must be written whenever the user opted in (the guest enforces on
+# this, not on a non-empty allow set, so an empty set still fails closed).
+[[ -f "$SEED/egress-enforce" ]] && ok "egress-enforce marker staged (guest fails closed)" ||
+  no "egress-enforce marker missing — guest would not enforce"
+
+# Fail-closed-on-empty: a FQDN-only allowlist that resolves to nothing must make the wrapper
+# REFUSE to boot (die), never fall through to open egress. Deterministic only offline (with
+# DNS, the always-added api.anthropic.com resolves and the set is non-empty), so gate on DNS
+# availability — `nix flake check`'s sandbox is offline, which is where this matters.
+if [[ -n "${CCVM_FQDNONLY:-}" ]]; then
+  if [[ -z "$(getent ahosts api.anthropic.com 2>/dev/null)" ]]; then
+    fqdn_cwd="$(mktemp -d "$WORK/fqdn.XXXXXX")"
+    if (cd "$fqdn_cwd" && "$CCVM_FQDNONLY") >/dev/null 2>&1; then
+      no "FQDN-only allowlist with no DNS did NOT fail closed (would run with open egress)"
+    else
+      ok "FQDN-only allowlist + no DNS fails closed (refuses to boot, not open egress)"
+    fi
+  else
+    ok "skipped fail-closed-on-empty (DNS available; api.anthropic.com resolves)"
+  fi
+fi
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [[ "$FAIL" -eq 0 ]]
