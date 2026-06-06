@@ -376,7 +376,7 @@ guest shell line-editing (backspace, etc.) works correctly with the terminfo fix
 
 ---
 
-## 10. 💭 Encrypted ephemeral scratch disk (FDE) for large writable data — NEW (design)
+## 10. 💭 Encrypted ephemeral scratch disk (FDE) for large writable data — IMPLEMENTATION PLAN READY
 
 **Problem:** the RAM-only model breaks for big **writable** data — `nix develop` realising an 8 GB
 closure, large `node_modules`/`target`/`.venv`, build outputs. tmpfs OOMs at `memory=4096`, and
@@ -394,22 +394,26 @@ closure, large `node_modules`/`target`/`.venv`, build outputs. tmpfs OOMs at `me
   is inert even on a crash that skips cleanup; the trap still `rm`s the image (belt + suspenders).
   FDE is load-bearing here because plain delete ≠ erasure on SSD/CoW (TRIM async, snapshots).
 
-**Decisions to make:**
-- **Scope:** writable encrypted `/nix/store` **+ enable `nix` in the guest** (true in-VM `nix
-  develop`; guest currently sets `nix.enable = false`) — vs. a generic encrypted scratch only,
-  leaving the store read-only.
-- **Default:** off by default (pure-RAM stays the default, boot stays fast); opt in via something
-  like `storeDisk = "16G"`.
+**Scope decided — PHASED (in the §3.11 plan):** build **phase 1 = generic encrypted `/scratch`**
+first (lowest surface, broadly useful, post-boot seed-service mount), then **phase 2 = writable
+encrypted `/nix/store` + `nix.enable = true`** as a follow-on (higher surface — the store is
+mounted in the *initrd*, so phase 2 needs the LUKS open + overlay done in the initrd, not the
+seed service). One option `storeDisk = "16G"` (off by default), plus `storeDiskMode =
+"scratch"|"store"`. This replaces the earlier "decide scope" open question.
 
 **Complementary to `mountHostNixStore`:** if the 8 GB is already realised in the **host** store,
 `mountHostNixStore = true` exposes it read-only at zero RAM cost — no new disk needed. The
 encrypted disk is specifically for when the guest must **write** a large closure ephemerally.
 
-**Status:** design only — **captured as `docs/design.md` §3.11** (2026-06-06). Needs `cryptsetup`
-in the guest + initrd; unbuildable/untestable without Nix+KVM. No code yet; the §3.11 writeup
-records the sparse-disk-backed `scratchDir` (not tmpfs), guest-generated LUKS key that never
-crosses 9p, fresh `luksFormat` per boot, the FDE-as-wipe rationale, and the two open decisions
-(scope: writable store + guest `nix` vs. generic scratch; default off via `storeDisk`).
+**Status: implementation plan READY, not built.** `docs/design.md` §3.11 now carries a phased,
+file-by-file **implementation plan** (config surface across the three deduped default sites +
+`@STOREDISK@` token 20→21; wrapper sparse-image/serial/cleanup; guest `cryptsetup` + dm-crypt
+modules; the seed-service LUKS format/open/mkfs/mount with fail-open; host.sh + boot.sh test
+assertions; docs + a CLAUDE.md invariant). It is **untestable on this dev box** (no Nix/KVM) and
+deliberately **excluded from auto-commit-on-green** — execute it on a Nix+KVM machine, where the
+definition of done is `nix flake check` green + a stub boot test proving `/scratch` is an
+encrypted writable mount and the host image is LUKS (host sees ciphertext only). Next actionable
+step when on such a box: implement phase 1.
 
 ---
 
