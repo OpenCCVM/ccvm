@@ -187,6 +187,13 @@ reopening one needs a *new* reason, not a rediscovery of the old trade-off.
   9p `msize` and add a **mode-aware** cache (`cache=loose`/`mmap` is fine for the ro overlay
   lower/config/seed, but risks stale reads on the live **rw** workspace where host and guest both
   write — keep it conservative there). Don't reach for virtiofs without that benchmark first.
+- **No published binary cache (first-run stays a local build).** Considered for `nix run` speed
+  and declined. Most of the guest closure already substitutes from `cache.nixos.org`, so first-run
+  is **bounded** — mostly download + the ccvm-specific squashfs/toplevel build (~minutes), not a
+  giant compile. And re-serving the **unfree** `claude-code` path from a public cache is a
+  **redistribution** problem (it's exactly why `cache.nixos.org` doesn't carry it). Net: bounded
+  win, licensing headache — not worth it. Don't re-propose a public cache without a new reason; if
+  first-run ever genuinely hurts, the lever is shrinking the closure, not redistributing claude-code.
 
 ## Build / test / debug
 
@@ -237,6 +244,11 @@ reopening one needs a *new* reason, not a rediscovery of the old trade-off.
 - **Don't touch `README.md` without an explicit go-ahead.** The user owns the README. Propose
   changes (even a one-word fix to a dangling reference) and wait for an explicit OK before
   editing it — unlike the rest of the tree, it is not auto-fixable under the commit-on-green rule.
+- **Audience split — write to the right altitude.** The README is **newcomer-facing**:
+  approachable, for people new to ccvm and non-technical evaluators. **CLAUDE.md is for the
+  technical reader** — security nuts, contributors — and is where the deep detail, threat-model
+  nuance, edge cases, and settled-decision rationale live. When something surfaces, put the
+  friendly version (if any) in the README and the real depth here, not the other way round.
 - **Commit trailer (exact):** `Co-authored-by: Claude <noreply@anthropic.com>` — lowercase
   `authored-by`, bare `Claude`, no model name. This intentionally differs from the Claude
   Code CLI default; use *this* form.
