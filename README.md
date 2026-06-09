@@ -105,11 +105,11 @@
   - `egressPorts`: destination ports the allowlist permits (default: `[ 443 ]`) (types: list of ports)
   - `agentSudo`: whether the in-VM agent gets passwordless root (sudo); `null` (default) = auto — on for DevEx and `--shell` debugging, but automatically **off** when `egressAllowlist` is set so a compromised agent can't flush the in-guest egress firewall to exfiltrate; `true`/`false` force it (default: `null`) (types: `null`, or `true`/`false`)
   - `vmDiskSize`: GiB of opt-in encrypted ephemeral disk at `/scratch`; `0` keeps pure RAM (default: `0`) (types: non-negative integer)
-  - `lockGuestMemory`: mlock guest RAM so secrets can't be paged to host swap (default: `false`) (types: `true`/`false`)
   - `apiKeyVariable`: host env var carrying the Anthropic API key, passed to the VM only over SSH (default: `"ANTHROPIC_API_KEY"`) (types: string)
   - `extraClaudeMd`: markdown staged as the guest's `~/.claude/CLAUDE.md` telling the agent it's in ccvm (default: built-in blurb) (types: lines; `""` disables)
   - `package`: the claude-code package to run in the VM (default: `pkgs.claude-code`) (types: package)
   - `extraGuestModules`: extra NixOS modules merged into the guest, an escape hatch (default: `[]`) (types: list of modules)
+  - `lockGuestMemory`: mlock guest RAM so in-VM secrets can't be paged to host swap. **Takes tinkering to work and isn't recommended for most people** — QEMU refuses to start unless you raise the host's `RLIMIT_MEMLOCK` (`ulimit -l`, systemd `LimitMEMLOCK`, or `limits.conf`). Only worth it if **(a)** your host swap is unencrypted (the one case it actually buys you something) or **(b)** you're willing to do that host setup; otherwise leave it off (default: `false`) (types: `true`/`false`)
 
 ### Alternate option declarations
 
