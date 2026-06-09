@@ -103,6 +103,7 @@
   - `persistClaudeProjects`: mount `~/.claude/projects` read-write so transcripts + memory persist back (cross-run `--resume`); scoped to `projects/` so the OAuth credential never crosses (default: `false`) (types: `true`/`false`)
   - `egressAllowlist`: FQDN/IP/CIDR egress allowlist — empty = open egress, non-empty = default-deny firewall (default: `[]`) (types: list of strings)
   - `egressPorts`: destination ports the allowlist permits (default: `[ 443 ]`) (types: list of ports)
+  - `agentSudo`: whether the in-VM agent gets passwordless root (sudo); `null` (default) = auto — on for DevEx and `--shell` debugging, but automatically **off** when `egressAllowlist` is set so a compromised agent can't flush the in-guest egress firewall to exfiltrate; `true`/`false` force it (default: `null`) (types: `null`, or `true`/`false`)
   - `vmDiskSize`: GiB of opt-in encrypted ephemeral disk at `/scratch`; `0` keeps pure RAM (default: `0`) (types: non-negative integer)
   - `lockGuestMemory`: mlock guest RAM so secrets can't be paged to host swap (default: `false`) (types: `true`/`false`)
   - `apiKeyVariable`: host env var carrying the Anthropic API key, passed to the VM only over SSH (default: `"ANTHROPIC_API_KEY"`) (types: string)
