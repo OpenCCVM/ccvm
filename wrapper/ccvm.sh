@@ -555,7 +555,10 @@ fi
 # server blocks with inline secrets (env tokens, Authorization headers) and a legacy primaryApiKey.
 # Gated on share.settings (it is startup config). Stage a SANITIZED copy: drop mcpServers[].env,
 # mcpServers[].headers and primaryApiKey (same pattern as share.gitConfig strips credential.*),
-# keeping the non-secret structure. Secure-fail: if jq is missing or the file is not valid JSON,
+# keeping the non-secret structure. That retained structure DOES include identifying account
+# metadata (oauthAccount: email + org/account UUIDs, userID) — not a credential (the token lives
+# only in the excluded .credentials.json), and the same identity already crosses via share.gitConfig.
+# Secure-fail: if jq is missing or the file is not valid JSON,
 # stage NOTHING rather than risk leaking a token — hence jq is a wrapper runtimeInput.
 if [[ $SHARE_SETTINGS == 1 && -f "$HOME/.claude.json" ]]; then
   if command -v jq >/dev/null 2>&1 &&

@@ -452,7 +452,11 @@ in
       # NON-trusted agent can still `nix build`/`nix develop` (builds run as the nixbld users); it
       # just can't override these trusted-only settings. The complete fix remains host-side egress
       # enforcement (see CLAUDE.md, "Egress"); this keeps the in-guest mitigation actually binding.
-      trusted-users = [ "root" ] ++ lib.optional cfg.agentSudo "ccvm";
+      # mkForce makes this list authoritative: nixpkgs' own nix module also defines
+      # `trusted-users = [ "root" ]` at equal priority, which otherwise CONCATENATES (rendering a
+      # harmless-but-confusing `root root`). Forcing it both deduplicates and guarantees no
+      # transitive module can silently slip an extra trusted (root-equivalent) user past this gate.
+      trusted-users = lib.mkForce ([ "root" ] ++ lib.optional cfg.agentSudo "ccvm");
       # Extra binary caches (nix.substituters / nix.trustedPublicKeys). Appended to the defaults
       # (cache.nixos.org + nixpkgs' keys), reached over HTTP at network speed — a substituter is
       # HTTP substitution, not a mount, so this needs no 9p share and exposes nothing of the host.
