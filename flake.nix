@@ -26,7 +26,12 @@
       packages = forAllSystems (system: {
         ccvm = partsAll.${system}.wrapper;
         default = partsAll.${system}.wrapper;
-        guest-store = partsAll.${system}.storeImage; # buildable artifact for checks
+        # Buildable guest artifacts, honestly typed as packages (derivations). The non-derivation
+        # bring-up handles (kernel cmdline `append`, the evaluated `guestSystem` config) are
+        # deliberately NOT flake outputs — introspect them with a direct `import ./lib/mkccvm.nix`
+        # (recipe in CLAUDE.md, "Build / test / debug"), which keeps every output correctly typed.
+        guest-store = partsAll.${system}.storeImage;  # ro squashfs /nix/store image
+        guest-toplevel = partsAll.${system}.toplevel; # full guest system closure
       });
 
       apps = forAllSystems (system:
@@ -61,13 +66,13 @@
           wrapper = partsAll.${system}.wrapper;
         } // (import ./tests { inherit pkgs; }));
 
-      # The home-manager module that exposes programs.ccvm.* and installs `ccvm`.
-      homeManagerModules.default = import ./modules/home-manager.nix;
-      homeManagerModules.ccvm = self.homeManagerModules.default;
-
-      # Bring-up / debug handle: raw boot artifacts and intermediate derivations.
-      #   nix eval  .#ccvmParts.x86_64-linux.append --raw
-      #   nix build .#ccvmParts.x86_64-linux.storeImage
-      ccvmParts = partsAll;
+      # The home-manager module that exposes programs.ccvm.* and installs `ccvm`. Exposed as
+      # `homeModules` (NOT the older `homeManagerModules`): stock Nix recognizes `homeModules` as a
+      # flake output, so `nix flake check` stays warning-free, whereas `homeManagerModules` triggers
+      # an "unknown flake output" warning. Consume as `ccvm.homeModules.default`. (nixvim made the
+      # same move; it only keeps a `homeManagerModules` alias — and thus the warning — for its
+      # existing users, which ccvm has none of, so there is nothing to alias.)
+      homeModules.default = import ./modules/home-manager.nix;
+      homeModules.ccvm = self.homeModules.default;
     };
 }

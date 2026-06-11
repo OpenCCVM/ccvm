@@ -206,7 +206,7 @@
       homeConfigurations.yourUsername = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
         modules = [
-          ccvm.homeManagerModules.default
+          ccvm.homeModules.default
           ./yourUsername/home.nix
         ];
       };

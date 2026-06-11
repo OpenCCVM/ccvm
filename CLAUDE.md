@@ -10,7 +10,7 @@ time to rediscover.
 
 | Path | Role |
 |---|---|
-| `flake.nix` | Outputs: `packages.*.ccvm`, `homeManagerModules.default`. |
+| `flake.nix` | Outputs: `packages.*.ccvm`, `homeModules.default`. |
 | `lib/mkccvm.nix` | The builder. Evaluates the guest NixOS system, then bakes its boot artifacts + scalar config into the wrapper via `builtins.replaceStrings` `@TOKENS@`. |
 | `wrapper/ccvm.sh` | Host wrapper **template** (the `@TOKEN@` placeholders). Generates throw-away SSH keys, writes the seed, boots QEMU headless, `ssh -tt`s in, traps cleanup. |
 | `guest/default.nix` | The microVM NixOS guest (tmpfs root, ro squashfs `/nix/store`). |
@@ -345,11 +345,21 @@ reopening one needs a *new* reason, not a rediscovery of the old trade-off.
 
   Boot it under `tcg`/`q35`, grep the output. This is exactly how `share.*` and
   `writableCwd` were verified end-to-end — much faster than booting the real agent.
-- `nix flake check` should pass. It builds the guest image, shellchecks the wrapper, and
-  runs `tests/host.sh` (the `checks.<sys>.host` derivation) — host-side secret hygiene,
-  config staging, verbatim argv, mode selection — against the real wrapper driven by its
-  `CCVM_DRYRUN` hook (no VM, no claude-code). The `homeManagerModules`/`ccvmParts` "unknown
-  flake output" warnings are pre-existing and cosmetic.
+- `nix flake check` should pass — and is **warning-clean**. It builds the guest image, shellchecks
+  the wrapper, and runs `tests/host.sh` (the `checks.<sys>.host` derivation) — host-side secret
+  hygiene, config staging, verbatim argv, mode selection — against the real wrapper driven by its
+  `CCVM_DRYRUN` hook (no VM, no claude-code). Both former "unknown flake output" warnings were real,
+  avoidable naming issues (not cosmetic): the home-manager module is exposed as **`homeModules`**
+  (the name stock Nix recognizes — `homeManagerModules` warns, verified on Nix 2.34.7; don't
+  reintroduce it), and the `ccvmParts` catch-all is gone. Buildable guest artifacts are honest
+  packages: `nix build .#guest-store` (ro squashfs store) or `.#guest-toplevel` (system closure).
+  The non-derivation bring-up handles (`append`, the evaluated `guestSystem`) are deliberately
+  **not** flake outputs; introspect them with a direct import — e.g. dump any guest config value:
+
+  ```bash
+  nix eval --impure --expr 'let p = (builtins.getFlake (toString ./.)).inputs.nixpkgs.legacyPackages.x86_64-linux;
+    in (import ./lib/mkccvm.nix { pkgs = p; } { nix.enable = true; egressAllowlist = ["x"]; }).guestSystem.config.nix.settings.trusted-users'
+  ```
 - **Rebuilding the guest from inside a hardened-egress ccvm needs `storage.googleapis.com`.** Any
   build that re-realizes the guest closure — `nix flake check`'s `guest-image`/`wrapper` checks,
   `tests/boot.nix`, or `nix build .#ccvm` — must fetch the **unfree** `claude-code`, whose
