@@ -1,5 +1,5 @@
 {
-  description = "ccvm — run Claude Code in a throw-away microVM with zero setup";
+  description = "ccvm — run Claude Code in a completely ephemeral microVM with zero setup";
 
   inputs = {
     # Pinned to the STABLE release: the guest closure no longer needs unstable to track
