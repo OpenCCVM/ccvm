@@ -1,0 +1,22 @@
+# Keep the SHA-pinned GitHub Actions current (security fixes land silently behind a pin).
+# Scope is github-actions ONLY: Dependabot has no Nix flake ecosystem, so flake.lock stays
+# owned by the weekly flake-update.yml workflow. Bumps open as manual-review PRs (consistent
+# with this repo's no-auto-merge posture) and trigger flake-check via pull_request.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday # lands alongside the weekly flake-update PR
+    # Supply-chain hardening: don't adopt a brand-new release the instant it lands (the window
+    # where a compromised/yanked release is most likely still live). Applies to version updates
+    # only — GHSA-driven security updates still open immediately.
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ["*"] # one batched PR, not one per action
+    commit-message:
+      prefix: ci
+    open-pull-requests-limit: 5
