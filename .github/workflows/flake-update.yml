@@ -15,10 +15,21 @@ on:
 jobs:
   update:
     runs-on: ubuntu-latest
+    # Least privilege: GITHUB_TOKEN is used only by checkout (read). The branch push + PR
+    # creation use a GitHub App installation token (below), not GITHUB_TOKEN.
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
     steps:
+      # Mint a short-lived (~1h) GitHub App installation token — used instead of GITHUB_TOKEN so
+      # the bot's PR actually triggers `check` (PRs opened by GITHUB_TOKEN don't), and instead of
+      # a PAT so there's no token expiry to silently break the weekly run and no tie to a personal
+      # account (the PR comes from the org App's identity). Needs repo variable APP_ID + secret
+      # APP_PRIVATE_KEY; App permissions: Contents RW + Pull requests RW, installed on this repo.
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app-token
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2 (Jan 2026)
       - uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22 (Mar 2026)
       - name: nix flake update
@@ -27,7 +38,7 @@ jobs:
         id: cpr
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1 (Apr 2026)
         with:
-          token: ${{ secrets.PAT }}
+          token: ${{ steps.app-token.outputs.token }}
           commit-message: "flake: update inputs"
           title: "flake: update inputs"
           branch: flake-update/auto
