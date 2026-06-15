@@ -83,6 +83,13 @@ In `yourConfigRepo/flake.nix` (replace every `yourUsername`):
     nixpkgs.url = "nixpkgs/nixos-26.05";
     ccvm = {
       url = "github:openccvm/ccvm";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        claude-code.follows = "claude-code";
+      };
+    };
+    claude-code = {
+      url = "github:ryoppippi/nix-claude-code";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager = {
@@ -94,6 +101,7 @@ In `yourConfigRepo/flake.nix` (replace every `yourUsername`):
     {
       nixpkgs,
       ccvm,
+      claude-code,
       home-manager,
       ...
     }:
@@ -101,6 +109,7 @@ In `yourConfigRepo/flake.nix` (replace every `yourUsername`):
       system = "x86_64-linux";
       pkgs = import nixpkgs {
         inherit system;
+        overlays = [ claude-code.overlays.default ];
       };
     in
     {
