@@ -22,7 +22,7 @@ ccvm runs even where `/dev/kvm` is unavailable — just more slowly. See
 With Nix and flakes enabled, run ccvm straight from the repository in any project directory:
 
 ```bash
-nix run github:jx-wi/ccvm
+nix run github:openccvm/ccvm
 ```
 
 > The first run builds the VM image, so it takes a few minutes; after that it's cached and starts
@@ -82,7 +82,7 @@ In `yourConfigRepo/flake.nix` (replace every `yourUsername`):
   inputs = {
     nixpkgs.url = "nixpkgs/nixos-26.05";
     ccvm = {
-      url = "github:jx-wi/ccvm";
+      url = "github:openccvm/ccvm";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager = {
@@ -177,7 +177,7 @@ In `yourConfigRepo/yourUsername/home.nix` (replace every `yourUsername` again):
 > **`claude-code` is unfree**, so a consuming config must allow it. The
 > `allowUnfreePredicate` above is the form that works in a real home-manager activation —
 > the name that matches is **`claude-code`** (the bare name `claude` is rejected; don't
-> simplify it). `nix run github:jx-wi/ccvm` needs none of this — ccvm's own build allows unfree
+> simplify it). `nix run github:openccvm/ccvm` needs none of this — ccvm's own build allows unfree
 > internally.
 
 Switch to your new configuration:

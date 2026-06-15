@@ -4,7 +4,7 @@
 
 ***100% reproducible from this repository.***
 
-[![flake check](https://github.com/jx-wi/ccvm/actions/workflows/flake-check.yml/badge.svg)](https://github.com/jx-wi/ccvm/actions/workflows/flake-check.yml) [![docs](https://img.shields.io/badge/docs-mdBook-1f6feb)](https://jx-wi.github.io/ccvm/) [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+[![flake check](https://github.com/openccvm/ccvm/actions/workflows/flake-check.yml/badge.svg)](https://github.com/openccvm/ccvm/actions/workflows/flake-check.yml) [![docs](https://img.shields.io/badge/docs-mdBook-1f6feb)](https://openccvm.github.io/ccvm/) [![License: MIT](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 ---
 
@@ -25,7 +25,7 @@
   By default it feels exactly like native `claude` (live edits to your project, your `~/.claude`
   settings, your git identity) — but your **login credential never crosses** into the VM, and one
   setting (`egressAllowlist`) locks down where the VM can connect. The full threat model and every
-  option live in the **[documentation](https://jx-wi.github.io/ccvm/)**.
+  option live in the **[documentation](https://openccvm.github.io/ccvm/)**.
 
 ---
 
@@ -36,7 +36,7 @@
   Just want to try it, without installing anything? In any project directory:
 
   ```bash
-  nix run github:jx-wi/ccvm
+  nix run github:openccvm/ccvm
   ```
 
   > [!NOTE]
@@ -47,7 +47,7 @@
   > The first run builds the VM image, so it takes a few minutes; after that it's cached and starts
   > quickly.
 
-  Once installed via home-manager (see **[Getting started](https://jx-wi.github.io/ccvm/getting-started.html)**),
+  Once installed via home-manager (see **[Getting started](https://openccvm.github.io/ccvm/getting-started.html)**),
   run it anywhere, exactly like `claude`:
 
   ```bash
@@ -68,16 +68,16 @@
 
 ## Documentation
 
-  Everything lives in the docs site: **[jx-wi.github.io/ccvm](https://jx-wi.github.io/ccvm/)**
+  Everything lives in the docs site: **[openccvm.github.io/ccvm](https://openccvm.github.io/ccvm/)**
 
-  - **[Getting started](https://jx-wi.github.io/ccvm/getting-started.html)** — requirements, the
+  - **[Getting started](https://openccvm.github.io/ccvm/getting-started.html)** — requirements, the
     full home-manager install, first-run authentication.
-  - **[Options](https://jx-wi.github.io/ccvm/options.html)** — every `programs.ccvm.*` setting and
+  - **[Options](https://openccvm.github.io/ccvm/options.html)** — every `programs.ccvm.*` setting and
     the per-run `CCVM_*` overrides (egress, encrypted disk, in-VM Nix, config sharing, …).
-  - **[Security](https://jx-wi.github.io/ccvm/security/threat-model.html)** — the threat model, the
+  - **[Security](https://openccvm.github.io/ccvm/security/threat-model.html)** — the threat model, the
     must-not-regress invariants, the egress design, and the encrypted-disk / clipboard-bridge
     internals.
-  - **[Developing](https://jx-wi.github.io/ccvm/developing/repo-map.html)** — repo map, the
+  - **[Developing](https://openccvm.github.io/ccvm/developing/repo-map.html)** — repo map, the
     build/test loop, the deliberate defaults, and the settled design decisions.
 
 ---

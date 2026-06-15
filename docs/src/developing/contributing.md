@@ -12,7 +12,7 @@ the settled [design decisions](design-decisions.md) (and which ones not to relit
 guest, the wrapper, or the boot path.
 
 `CLAUDE.md` in the repo root is the terse operational version — the must-not-regress checklist plus a
-routing directive into this site. The [README](https://github.com/jx-wi/ccvm/blob/main/README.md) is
+routing directive into this site. The [README](https://github.com/openccvm/ccvm/blob/main/README.md) is
 deliberately newcomer-facing — keep deep/technical detail here, not in the README.
 
 ## Definition of done

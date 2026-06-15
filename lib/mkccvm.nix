@@ -104,13 +104,13 @@ let
   # `nix flake check` "lacks attribute 'meta'" warnings. `mainProgram` matches the /bin name.
   meta = {
     description = "Run Claude Code in a throw-away, RAM-only QEMU microVM";
-    homepage = "https://github.com/jx-wi/ccvm";
+    homepage = "https://github.com/openccvm/ccvm";
     license = lib.licenses.mit;
     mainProgram = "ccvm";
     maintainers = [
       {
-        github = "jx-wi";
-        name = "jx-wi";
+        github = "openccvm";
+        name = "openccvm";
       }
     ];
     platforms = lib.platforms.linux;

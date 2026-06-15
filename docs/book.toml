@@ -6,11 +6,11 @@ language = "en"
 src = "src"
 
 [output.html]
-# Project pages live under https://<user>.github.io/ccvm/, so the base path is /ccvm/.
+# Project pages live under https://openccvm.github.io/ccvm/, so the base path is /ccvm/.
 # If the repo is ever renamed, update this and the README badges together.
 site-url = "/ccvm/"
-git-repository-url = "https://github.com/jx-wi/ccvm"
-edit-url-template = "https://github.com/jx-wi/ccvm/edit/main/docs/src/{path}"
+git-repository-url = "https://github.com/openccvm/ccvm"
+edit-url-template = "https://github.com/openccvm/ccvm/edit/main/docs/src/{path}"
 default-theme = "navy"
 preferred-dark-theme = "navy"
 no-section-label = false

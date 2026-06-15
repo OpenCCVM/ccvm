@@ -82,7 +82,7 @@
           '';
     in
     {
-      # `nix run github:jx-wi/ccvm` works standalone; defaults mirror native claude
+      # `nix run github:openccvm/ccvm` works standalone; defaults mirror native claude
       # (live host edits + shared host config), with isolation available opt-in.
       packages = forAllSystems (system: {
         ccvm = partsAll.${system}.wrapper;

@@ -64,4 +64,4 @@ The QEMU boundary defends the host filesystem and the user's credentials against
 - Guest kernel/userspace hardening: `protectKernelImage`, hardening sysctls, `sudo-rs`, locked
   root password, pinned `allowed-users`.
 
-[0.1.0]: https://github.com/jx-wi/ccvm/releases/tag/v0.1.0
+[0.1.0]: https://github.com/openccvm/ccvm/releases/tag/v0.1.0
