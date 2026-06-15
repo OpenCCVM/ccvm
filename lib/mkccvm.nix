@@ -109,8 +109,8 @@ let
     mainProgram = "ccvm";
     maintainers = [
       {
-        github = "openccvm";
-        name = "openccvm";
+        github = "OpenCCVM";
+        name = "OpenCCVM";
       }
     ];
     platforms = lib.platforms.linux;
