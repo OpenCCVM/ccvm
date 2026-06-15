@@ -234,6 +234,9 @@ command -v sudo >/dev/null && sudo --version 2>&1 | head -1 || echo 'no sudo (eg
 
 **Expected (fixed guest):** `settings.json` **writable**; `kptr_restrict=2`, `dmesg_restrict=1`,
 `unprivileged_bpf_disabled=1`, `bpf_jit_harden=2`, `rp_filter=1`; `dmesg` denied; `kexec_load_disabled=1`.
+(`net.core.bpf_jit_harden` is mode `0600`/root-only, so as the non-root agent it reads **empty** — a
+privilege artifact, NOT a missing sysctl: it is set in `guest/default.nix` and applied at boot by
+systemd-sysctl. Don't read the empty value as a finding.)
 When sudo exists (open-egress posture) it should resolve to **sudo-rs**. **FAIL = Medium** for D-1
 regression (read-only settings.json); **Low** for any missing sysctl.
 

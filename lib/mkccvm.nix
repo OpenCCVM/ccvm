@@ -103,7 +103,7 @@ let
   # description and the right binary) and reused by the flake's `apps` outputs to silence the
   # `nix flake check` "lacks attribute 'meta'" warnings. `mainProgram` matches the /bin name.
   meta = {
-    description = "Run Claude Code in a throw-away, RAM-only QEMU microVM";
+    description = "Run Claude Code in a completely ephemeral, RAM-only QEMU microVM";
     homepage = "https://github.com/openccvm/ccvm";
     license = lib.licenses.mit;
     mainProgram = "ccvm";
