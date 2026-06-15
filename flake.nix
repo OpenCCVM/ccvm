@@ -157,13 +157,16 @@
       # The home-manager module that exposes programs.ccvm.* and installs `ccvm`. Exposed as
       # `homeModules` (NOT the older `homeManagerModules`): stock Nix recognizes `homeModules` as a
       # flake output, so `nix flake check` stays warning-free, whereas `homeManagerModules` triggers
-      # an "unknown flake output" warning. Consume as `ccvm.homeModules.default`. (nixvim made the
+      # an "unknown flake output" warning. Consume as `ccvm.homeModules.ccvm`. (nixvim made the
       # same move; it only keeps a `homeManagerModules` alias — and thus the warning — for its
       # existing users, which ccvm has none of, so there is nothing to alias.)
+      # Named `ccvm` rather than `default`: nothing auto-consumes `homeModules.default` (unlike
+      # `packages.default`), so the conventional name buys nothing here, while the named output is
+      # self-documenting at the consumer's call site. ccvm is unpublished, so there are no
+      # consumers of a `default` output to keep working.
       # Passed the claude-code input so the module can apply its overlay to the consumer's own
       # pkgs (a home-manager user's nixpkgs has no view of our inputs otherwise) — keeping the
       # standalone and home-manager paths on the same community claude-code build.
-      homeModules.default = import ./modules/home-manager.nix { inherit claude-code; };
-      homeModules.ccvm = self.homeModules.default;
+      homeModules.ccvm = import ./modules/home-manager.nix { inherit claude-code; };
     };
 }

@@ -31,7 +31,7 @@ before changing the relevant code.
 
 | Path | Role |
 |---|---|
-| `flake.nix` | Outputs: `packages.*` (`ccvm`, guest artifacts, `docs`), `checks.*`, `homeModules.default`. |
+| `flake.nix` | Outputs: `packages.*` (`ccvm`, guest artifacts, `docs`), `checks.*`, `homeModules.ccvm`. |
 | `lib/mkccvm.nix` | The builder. Evaluates the guest NixOS system, then bakes its boot artifacts + scalar config into the wrapper via `builtins.replaceStrings` `@TOKENS@`. |
 | `lib/defaults.nix` | Default config values for the builder. |
 | `lib/ccvm-context.md` | Built-in `extraClaudeMd` blurb staged as the guest's `~/.claude/CLAUDE.md`. |

@@ -107,7 +107,7 @@ In `yourConfigRepo/flake.nix` (replace every `yourUsername`):
       homeConfigurations.yourUsername = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
         modules = [
-          ccvm.homeModules.default
+          ccvm.homeModules.ccvm
           ./yourUsername/home.nix
         ];
       };
