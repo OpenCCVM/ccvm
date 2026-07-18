@@ -21,6 +21,17 @@ The firewall is installed inside the guest by a **root systemd unit** (not the a
 (`egress-hosts`), written into the guest's `/etc/hosts`, so the agent resolves each FQDN to exactly
 the IP the firewall allows. DNS is pinned to the slirp stub resolver.
 
+## The agent is told its reachable hosts
+
+A default-deny firewall fails *silently*: a request to a blocked host hangs until it times out,
+which reads to an agent like a flaky network, so it retries and burns turns. To avoid that, the
+per-run `# ccvm session` header ccvm prepends to the guest `~/.claude/CLAUDE.md` names the **exact**
+reachable hosts this run — the allowlist plus the always-added `api.anthropic.com` — and tells the
+in-VM agent that anything else will hang, not to attempt it, and to hand unreachable fetches (and
+host-credential work like `git fetch`/`push`) back to the user in a copy-pasteable block. Built in
+`wrapper/ccvm.sh` from the resolved `EGRESSALLOW`; the generic handoff rules live in
+`lib/ccvm-context.md`. So a locked allowlist changes agent *behaviour*, not just packet fate.
+
 ## The load-bearing caveat: enforcement lives in the guest
 
 Because enforcement lives in the guest, it only binds a **non-root** agent — a root agent could

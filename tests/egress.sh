@@ -101,5 +101,20 @@ if [[ -n ${CCVM_FQDNONLY:-} ]]; then
   fi
 fi
 
+# The agent-facing context (seed/claude-md) must tell the in-VM Claude that egress is LOCKED, name
+# the exact reachable hosts (the baked allowlist + the always-added api.anthropic.com), so it does
+# not waste turns on firewalled fetches. The static body is a stand-in fixture here — this asserts
+# only the dynamic per-run header, which is exactly the config-driven behaviour under test.
+CM="$SEED/claude-md"
+grep -q 'LOCKED DOWN' "$CM" 2>/dev/null &&
+  ok "claude-md: locked-egress run tells the agent egress is locked down" ||
+  no "claude-md: locked-egress note missing (agent not warned egress is closed)"
+grep -q '10.0.0.0/8' "$CM" 2>/dev/null &&
+  ok "claude-md: locked-egress header names the allowlisted host" ||
+  no "claude-md: allowlisted host (10.0.0.0/8) missing from the header"
+grep -q 'api.anthropic.com' "$CM" 2>/dev/null &&
+  ok "claude-md: locked-egress header names the always-reachable api.anthropic.com" ||
+  no "claude-md: api.anthropic.com not named in the locked-egress header"
+
 printf '\n%d passed, %d failed\n' "$PASS" "$FAIL"
 [[ $FAIL -eq 0 ]]
