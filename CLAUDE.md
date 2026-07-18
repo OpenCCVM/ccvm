@@ -95,7 +95,8 @@ is the hardening knob). — full detail: `docs/src/security/threat-model.md`.
   checks (`bash -n`, the `host.sh` dry-run recipe, and — on a Nix+KVM box — `nix flake check` /
   `bash tests/boot.sh` / a `--shell` pass for TTY changes); if green, commit without stopping to ask
   per item. Surface anything only verifiable on a Nix+KVM box so it gets checked before being
-  claimed done.
+  claimed done. `./ci.sh` runs the exact `flake-check.yml` steps locally (it reads their `run:`
+  scripts straight from the workflow) — the fastest way to reproduce CI before a commit.
 - **Definition of done for a behaviour change:** `nix flake check` green **and** a stub-package boot
   test asserting the new behaviour under `tcg`/`q35` — plus a human `--shell` pass if it touches the
   TTY. Full loop + the fast stub-`claude` pattern: `docs/src/developing/build-test-debug.md`.
