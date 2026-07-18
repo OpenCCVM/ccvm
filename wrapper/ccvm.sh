@@ -742,6 +742,15 @@ if [[ -n $CLAUDEMD && -r $CLAUDEMD ]]; then
     if ((VMDISKSIZE > 0)); then
       printf 'A disk-backed, encrypted scratch area is mounted at /scratch — use it for LARGE ephemeral writes (build outputs, node_modules, target/, caches) that would otherwise exhaust the RAM-backed filesystem. It is wiped on exit like everything else, so nothing there is durable.\n\n'
     fi
+    # Egress posture, resolved per run. Locked => name the EXACT reachable hosts (plus the always-
+    # auto-added api.anthropic.com) so the agent does not waste turns on firewalled requests that
+    # silently hang. Empty EGRESSALLOW => open egress (native default). $EGRESSALLOW is passed as a
+    # %s ARGUMENT, never spliced into the format string.
+    if [[ -n ${EGRESSALLOW// /} ]]; then
+      printf 'Network egress is LOCKED DOWN this run. The ONLY hosts reachable from inside this VM are: %s — plus api.anthropic.com (the Claude API). Every other host is firewalled: a request to it HANGS and then times out. That is not a transient error and retrying will NOT help, so do NOT try to fetch, clone, curl, pip/npm/cargo install, or git fetch/pull from any host that is not in that list. When you need something from an unlisted host — or any command that needs host network or host credentials — hand it to the user to run on the host (see "Handing work to the host" below) instead of attempting it yourself.\n\n' "$EGRESSALLOW"
+    else
+      printf 'Network egress is OPEN this run (no allowlist) — you can reach any host, the same as running claude natively.\n\n'
+    fi
     cat "$CLAUDEMD"
   } >"$SEED/claude-md"
 fi

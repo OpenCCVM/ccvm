@@ -390,6 +390,10 @@ grep -q 'do NOT persist across runs' "$CM" 2>/dev/null &&
   grep -q 'PREFER writing durable information into the codebase' "$CM" 2>/dev/null &&
   ok "claude-md: persist-off run warns memory is ephemeral, prefer the codebase" ||
   no "claude-md: missing the ephemeral-memory / prefer-codebase guidance"
+# Open egress (baked default): the agent is told egress is OPEN and it can reach any host.
+grep -q 'egress is OPEN' "$CM" 2>/dev/null &&
+  ok "claude-md: open-egress run tells the agent it can reach any host" ||
+  no "claude-md: open-egress note missing (agent not told egress is open)"
 
 # Overlay run: the mode line must flip to the DISCARDED warning (and not claim LIVE).
 SEED="$(HOME="$FAKE_HOME" CCVM_SHARE_CLAUDE_CONFIG=0 run --read-only-cwd)/seed"
