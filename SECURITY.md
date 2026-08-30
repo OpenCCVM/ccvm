@@ -14,7 +14,7 @@ yourself, a runnable pentest / regression playbook lives in
 
 **Please report privately — do not open a public issue for a security bug.**
 
-- **Email** (preferred): github@jaxxen.dev
+- **Email** (preferred): jxwi@proton.me
 - Or GitHub **private vulnerability reporting** on this repo — *Security → Report a vulnerability* —
   to keep it on-platform.
 
