@@ -92,3 +92,13 @@ intact. Never rebuild the argv by string-splitting.
 
 `wrapper/ccvm.sh` is built via `writeShellApplication`, so **shellcheck runs at build** — keep it
 clean (and the `set -euo pipefail` it injects in mind).
+
+## `cp -a` copies `/nix/store`'s read-only modes
+
+home-manager config is symlinked into `/nix/store` (dirs `0555`, files `0444`), and `cp -aL`
+preserves those modes into the seed. A read-only staged dir breaks two things: the nested
+`.credentials.json` strip (unlinking needs a writable parent, so `find -delete` fails and the
+credential leaks into the seed), and the exit-time `rm -rf` of the scratch dir (`Permission
+denied` on exit). The wrapper runs `chmod -R u+w` on the staged copy before the strip, and again
+on the scratch dir before cleanup. `tests/host.sh` makes its fake store read-only so a regression
+shows up in the test.
