@@ -30,7 +30,7 @@ no() {
 }
 
 WORK="$(mktemp -d)"
-trap 'rm -rf "$WORK"' EXIT
+trap 'chmod -R u+w "$WORK" 2>/dev/null; rm -rf "$WORK"' EXIT
 export XDG_RUNTIME_DIR="$WORK/run"
 mkdir -p "$XDG_RUNTIME_DIR"
 
@@ -62,6 +62,10 @@ printf '%s\n' "$SETTINGS_MARKER" >"$HM_STORE/.claude/settings.json"
 printf '{"oauth":"%s"}\n' "$CRED_MARKER" >"$HM_STORE/.claude/.credentials.json"
 printf '{"oauth":"%s"}\n' "$NESTED_CRED_MARKER" >"$HM_STORE/agents/.credentials.json"
 printf 'agent body\n' >"$HM_STORE/agents/helper.md"
+# Real /nix/store paths are read-only (dirs 0555, files 0444) and `cp -a` preserves that mode, so
+# the fake store is too: the wrapper must restore u+w on the staged copy, or the nested credential
+# strip (`find -delete`) and the exit-time `rm -rf` of the seed both fail with EACCES.
+chmod -R a-w "$HM_STORE"
 
 FAKE_HOME="$WORK/home"
 mkdir -p "$FAKE_HOME/.claude"
@@ -138,6 +142,9 @@ fi
 [[ ! -e "$CFGOUT/agents/.credentials.json" ]] &&
   ok "share.agents: nested .credentials.json stripped from agents/ copy" ||
   no "share.agents: .credentials.json present inside agents/ copy"
+[[ -z "$(find "$CFGOUT" ! -perm -u+w 2>/dev/null)" ]] &&
+  ok "share.*: staged read-only store content is owner-writable (seed removable on exit)" ||
+  no "share.*: read-only entries in seed/claude-config — exit-time rm -rf would fail"
 [[ -d "$CFGOUT/skills" && -f "$CFGOUT/skills/my-skill.md" ]] &&
   ok "share.skills: skills/ dir staged" ||
   no "share.skills: skills/ not staged"

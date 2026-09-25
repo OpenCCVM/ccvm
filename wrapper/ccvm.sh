@@ -157,6 +157,8 @@ cleanup() {
     elif [[ ${DRYRUN:-0} == 1 ]]; then
       : # dry run prints and keeps $TMP itself; leave it for the caller to inspect/remove.
     else
+      # u+w first: anything staged from a read-only /nix/store source is otherwise undeletable.
+      chmod -R u+w "$TMP" 2>/dev/null || true
       rm -rf "$TMP"
     fi
   fi
@@ -588,9 +590,18 @@ if [[ -d $CLAUDEDIR ]]; then
     [[ -d "$CLAUDEDIR/config" ]] && cp -aL "$CLAUDEDIR/config" "$CFGOUT/config" 2>/dev/null || true
   fi
 
+  # cp -a preserves /nix/store's read-only modes (dirs 0555, files 0444). Restore owner write on
+  # the staged copy, or BOTH the credential strip below (unlink needs a writable parent dir) and
+  # the exit-time `rm -rf $TMP` fail with EACCES.
+  chmod -R u+w "$CFGOUT"
+
   # Defense in depth: strip any .credentials.json a directory copy dragged in at any depth.
   # The credential must never reach the on-disk seed. Invariant: grep $SEED for the credential -> 0.
+  # Secure-fail: if any copy survives the delete, refuse to boot rather than stage it.
   find "$CFGOUT" -name '.credentials.json' -delete 2>/dev/null || true
+  if [[ -n "$(find "$CFGOUT" -name '.credentials.json' -print -quit 2>/dev/null)" ]]; then
+    die "could not strip a .credentials.json from the staged ~/.claude config; refusing to continue"
+  fi
 fi
 
 # ~/.claude.json (home-root, distinct from ~/.claude/ dir) is config, but it CAN carry MCP

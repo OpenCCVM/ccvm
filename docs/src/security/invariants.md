@@ -22,7 +22,10 @@ exclusion is by omission, not by filter. Two defenses reinforce this:
 
 1. The per-item `cp -aL` only copies the listed paths, so the credential is never touched.
 2. A defense-in-depth `find $SEED/claude-config -name .credentials.json -delete` strips any nested
-   one that a directory `cp` might drag in.
+   one that a directory `cp` might drag in. The staged copy is `chmod -R u+w`'d first (a
+   read-only `/nix/store` parent dir would otherwise make the delete fail silently), and the
+   wrapper **secure-fails** (`die`) if any `.credentials.json` survives the strip. See
+   [Gotchas](../developing/gotchas.md).
 
 The guest lays staged items into a fresh **tmpfs** `~/.claude` at boot. Claude starts
 unauthenticated; the user's `/login` or API key authenticates it ephemerally. This also avoids OAuth
