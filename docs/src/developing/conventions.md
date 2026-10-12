@@ -1,17 +1,21 @@
 # Conventions
 
-## Commit automatically once all checks pass when working through a task list
+## Stage, don't commit — commits are signed with a hardware key
 
-When working a multi-step task, run the relevant checks (`bash -n`, the `host.sh` dry-run recipe,
-and — on a Nix+KVM box — `nix flake check` / `bash tests/boot.sh` / a `--shell` pass for TTY
-changes); if they're green, commit without stopping to ask per item. Still surface anything that can
-only be verified on the Nix+KVM box so it gets checked there before being claimed done.
+The user signs every commit with a hardware security key, which is not reachable from inside the VM,
+so agents never run `git commit`. When working a multi-step task, run the relevant checks (`bash -n`,
+the `host.sh` dry-run recipe, and — on a Nix+KVM box — `nix flake check` / `bash tests/boot.sh` / a
+`--shell` pass for TTY changes); if they're green, `git add` the change and hand the user the full
+commit message (including the `Co-authored-by` trailer) as a copy-pasteable block — without stopping
+to ask per item. If a commit was made anyway, `git reset --soft HEAD~1` to undo it with the changes
+still staged. Still surface anything that can only be verified on the Nix+KVM box so it gets checked
+there before being claimed done.
 
 ## Don't touch `README.md` without an explicit go-ahead
 
 The user owns the README. Propose changes (even a one-word fix to a dangling reference) and wait for
 an explicit OK before editing it — unlike the rest of the tree, it is not auto-fixable under the
-commit-on-green rule.
+stage-on-green rule.
 
 ## Audience split — write to the right altitude
 

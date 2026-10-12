@@ -91,18 +91,21 @@ is the hardening knob). — full detail: `docs/src/security/threat-model.md`.
 
 ## Conventions
 
-- **Commit automatically once all checks pass when working through a task list.** Run the relevant
-  checks (`bash -n`, the `host.sh` dry-run recipe, and — on a Nix+KVM box — `nix flake check` /
-  `bash tests/boot.sh` / a `--shell` pass for TTY changes); if green, commit without stopping to ask
-  per item. Surface anything only verifiable on a Nix+KVM box so it gets checked before being
-  claimed done. `./ci.sh` runs the exact `flake-check.yml` steps locally (it reads their `run:`
-  scripts straight from the workflow) — the fastest way to reproduce CI before a commit.
+- **Stage, don't commit — the user signs every commit with a hardware security key.** Never run
+  `git commit` (the key isn't reachable from the VM). When working through a task list, run the
+  relevant checks (`bash -n`, the `host.sh` dry-run recipe, and — on a Nix+KVM box — `nix flake
+  check` / `bash tests/boot.sh` / a `--shell` pass for TTY changes); if green, `git add` the change
+  and hand over the full commit message (with the trailer below) as a copy-pasteable block, without
+  stopping to ask per item. If a commit was already made, `git reset --soft` it. Surface anything
+  only verifiable on a Nix+KVM box so it gets checked before being claimed done. `./ci.sh` runs the
+  exact `flake-check.yml` steps locally (it reads their `run:` scripts straight from the workflow) —
+  the fastest way to reproduce CI before handing over a commit.
 - **Definition of done for a behaviour change:** `nix flake check` green **and** a stub-package boot
   test asserting the new behaviour under `tcg`/`q35` — plus a human `--shell` pass if it touches the
   TTY. Full loop + the fast stub-`claude` pattern: `docs/src/developing/build-test-debug.md`.
 - **Don't touch `README.md` without an explicit go-ahead.** The user owns the README. Propose
   changes (even a one-word fix) and wait for an explicit OK — it is NOT auto-fixable under the
-  commit-on-green rule. (The docs site and CLAUDE.md *are* auto-fixable.)
+  stage-on-green rule. (The docs site and CLAUDE.md *are* auto-fixable.)
 - **Audience split:** README = newcomer; `docs/src/` Security/Developing = depth; CLAUDE.md = terse
   operational + routing. Put the friendly version in the README, the real depth in the site, the
   one-line rule here. Don't duplicate depth across all three.
@@ -127,7 +130,7 @@ is the hardening knob). — full detail: `docs/src/security/threat-model.md`.
 ## Docs site
 
 The site under `docs/src/` is the single source of truth for extended content. Edit the relevant
-page when you change behaviour (it's auto-fixable under commit-on-green, unlike the README). Build
+page when you change behaviour (it's auto-fixable under stage-on-green, unlike the README). Build
 and preview locally with `nix build .#docs` (open `result/index.html`) or `mdbook serve docs` from
 the devShell. `checks.docs` fails CI on dead **internal** links (mdbook-linkcheck2,
 `warning-policy = "error"`), so keep cross-references valid. When you add a security/design fact
