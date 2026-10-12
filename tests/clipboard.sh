@@ -48,9 +48,29 @@ export WORK
 
 reader() { printf '%s\n' "$1" | "$WORK/clip-reader" x "$WORK/fakexclip"; }
 
+# Dump what the reader saw when detection comes back empty. The reader discards the tool's stderr
+# and its grep's status (`2>/dev/null`, `|| true`), so without this a failure is one opaque line.
+# Seen once as a CI-only flake that passed on rerun; this makes the next occurrence self-explaining.
+targets_diag() {
+  {
+    printf '  --- diagnostics ---\n'
+    printf '  /bin/sh -> %s\n' "$(readlink -f /bin/sh 2>&1 || true)"
+    printf '  grep    -> %s\n' "$(command -v grep 2>&1 || true)"
+    printf '  reader stdout: [%s]\n' "$targets"
+    printf '  reader stderr: [%s]\n' "$(printf 'TARGETS\n' | "$WORK/clip-reader" x "$WORK/fakexclip" 2>&1 >/dev/null || true)"
+    rc=0
+    raw="$("$WORK/fakexclip" -selection clipboard -t TARGETS -o 2>&1)" || rc=$?
+    printf '  fakexclip TARGETS (rc=%s): [%s]\n' "$rc" "$raw"
+    ls -l "$WORK" 2>&1 | sed 's/^/  /'
+  } >&2
+}
+
 # 1. detection: a TARGETS request reports the image types, and NOTHING text-shaped.
 targets="$(reader TARGETS)"
-printf '%s\n' "$targets" | grep -qi 'image/png' || fail "TARGETS did not advertise image/png"
+if ! printf '%s\n' "$targets" | grep -qi 'image/png'; then
+  targets_diag
+  fail "TARGETS did not advertise image/png"
+fi
 if printf '%s\n' "$targets" | grep -qiE 'text/|utf8|utf-8|string'; then
   fail "TARGETS leaked a text/non-image target: [$targets]"
 fi
