@@ -48,7 +48,8 @@ native-terminal fidelity, reproducible end-to-end from this flake.
   CI.
 - **CI** — `nix flake check` (guest image, wrapper shellcheck, host secret-hygiene tests,
   clipboard, egress, formatting, docs link-check) on every push/PR, plus a weekly
-  `nix flake update` PR.
+  `nix flake update` PR. The same check also runs against `nixos-unstable` on every push/PR and
+  weekly.
 
 ### Security
 

@@ -17,7 +17,8 @@ A behaviour change is done when:
 
 1. **`nix flake check` is green.** It builds the guest image, shellchecks the wrapper, and
    runs the host-side guarantee tests (secret hygiene, config staging, verbatim argv, mode
-   selection). CI runs this on every PR.
+   selection). CI runs this on every PR, against both the pinned nixpkgs and
+   `nixos-unstable`.
 2. **`bash tests/boot.sh` passes on a Nix+KVM box** — *if* you touched the guest, wrapper,
    or boot path. It boots a stub-`claude` VM and asserts the things that need a real guest
    (argv reaches claude, rw vs. overlay file visibility, egress, the encrypted disk). This

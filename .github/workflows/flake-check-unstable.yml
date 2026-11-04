@@ -1,0 +1,29 @@
+name: flake check (unstable)
+
+# `nix flake check` with nixpkgs overridden to nixos-unstable. The home-manager module builds the
+# guest from the consumer's own nixpkgs, so it must keep evaluating on unstable, not just on the
+# pinned lock (see docs/src/developing/gotchas.md). Runs on PRs to catch our own regressions and
+# weekly to catch upstream removals before users hit them. --override-input never writes
+# flake.lock; the log's "Updated input 'nixpkgs'" line names the unstable rev to reproduce with.
+# Kept out of flake-check.yml so ./ci.sh stays a local mirror of the pinned check only.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '0 6 * * 1' # Monday 6 AM UTC, alongside the weekly flake-update PR
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # strictest possible
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6.0.2 (Jan 2026)
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v22 (Mar 2026)
+      - name: nix flake check (nixos-unstable)
+        run: |
+          nix flake check -L --show-trace --keep-going \
+            --override-input nixpkgs github:nixos/nixpkgs/nixos-unstable

@@ -5,7 +5,8 @@
 
 ## Checklist
 
-CI runs `nix flake check` (host-side guarantees, guest build, shellcheck) automatically. The
+CI runs `nix flake check` (host-side guarantees, guest build, shellcheck) automatically, against
+both the pinned nixpkgs and `nixos-unstable`. The
 full-boot smoke test (`tests/boot.sh`) needs a real VM and is **not** in CI — so if your change
 touches the **guest, wrapper, or boot path**, you must run it locally on a Nix+KVM box and paste
 the result here. (See CLAUDE.md → "Definition of done".)
