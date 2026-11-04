@@ -4,6 +4,8 @@
 
 - **Linux**
 - **Nix** (with flakes enabled)
+- **nixpkgs 26.05 or newer** if you install through home-manager, which builds the VM from your
+  own nixpkgs (`nix run` uses ccvm's pinned one)
 
 No NixOS required — Nix on any Linux distribution works. If you don't have Nix yet, install it with
 the [official installer](https://nixos.org/download/), then enable flakes once by adding this to

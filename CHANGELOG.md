@@ -42,7 +42,8 @@ native-terminal fidelity, reproducible end-to-end from this flake.
 - **Runtime `CCVM_*` overrides** — per-run env-var overrides of the baked defaults; explicit
   `ccvm` flags win over env vars. `CCVM_SHARE_CLAUDE_CONFIG=0|1` toggles all `share.*` at once.
 - **`--ccvm-help` / `--ccvm-version`** wrapper flags.
-- **home-manager module** (`programs.ccvm.*`) installing the command.
+- **home-manager module** (`programs.ccvm.*`) installing the command. It builds the VM from your
+  own nixpkgs, which must be 26.05 or newer (`nixos-unstable` works too).
 - **mdBook documentation site** (deployed to GitHub Pages), with internal-link checking gated in
   CI.
 - **CI** — `nix flake check` (guest image, wrapper shellcheck, host secret-hygiene tests,

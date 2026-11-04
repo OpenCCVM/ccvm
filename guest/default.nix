@@ -247,11 +247,10 @@ in
     # Boot: direct kernel boot, no bootloader. tmpfs root + ro squashfs store.
     ##########################################################################
     boot.loader.grub.enable = false;
-    # systemd-initrd (the scripted initrd is deprecated, slated for removal in 26.11). It
-    # mounts the tmpfs root + read-only squashfs /nix/store from generated units; the module
-    # list below makes the virtio transports and squashfs/overlay available in the initrd.
-    boot.initrd.systemd.enable = true;
-
+    # The guest relies on the systemd initrd (the default since NixOS 26.05, the only option since
+    # 26.11); the boot.initrd.systemd.* settings below depend on it. It mounts the tmpfs root +
+    # read-only squashfs /nix/store from generated units; the module list below makes the virtio
+    # transports and squashfs/overlay available in the initrd.
     boot.initrd.availableKernelModules = [
       "virtio_pci" # q35 transport
       "virtio_mmio" # microvm transport

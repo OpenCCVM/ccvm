@@ -31,7 +31,8 @@
 
 ## Quick start
 
-  **Requirements:** Linux and [Nix](https://nixos.org/download/) (with flakes enabled).
+  **Requirements:** Linux and [Nix](https://nixos.org/download/) (with flakes enabled). Installing
+  through home-manager also needs nixpkgs 26.05 or newer.
 
   Just want to try it, without installing anything? In any project directory:
 

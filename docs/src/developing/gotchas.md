@@ -102,3 +102,21 @@ credential leaks into the seed), and the exit-time `rm -rf` of the scratch dir (
 denied` on exit). The wrapper runs `chmod -R u+w` on the staged copy before the strip, and again
 on the scratch dir before cleanup. `tests/host.sh` makes its fake store read-only so a regression
 shows up in the test.
+
+## The guest is built from the consumer's nixpkgs, not just the pinned one
+
+The `nixos-26.05` lock only governs standalone `nix run`. The home-manager module hands the
+consumer's own `pkgs` to `lib/mkccvm.nix`, so `guest/` must also evaluate on newer nixpkgs,
+including `nixos-unstable`. The supported floor is 26.05.
+
+Example: NixOS 26.11 removed the scripted initrd, and *any* definition of
+`boot.initrd.systemd.enable` (even `true`, `mkDefault` or `mkForce`) now fails evaluation with a
+removed-option assertion. The guest relies on the systemd initrd, which 26.05 already enables by
+default, so leave that option undefined.
+
+CI only checks the pinned lock. To check against unstable without touching `flake.lock`
+(`nix flake update nixpkgs` would only move within 26.05):
+
+```bash
+nix flake check --override-input nixpkgs github:nixos/nixpkgs/nixos-unstable
+```
