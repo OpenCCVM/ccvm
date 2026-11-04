@@ -1,3 +1,7 @@
+<!-- SPDX-License-Identifier: MIT
+  -- Copyright (C) 2026 Jaxxen
+  -->
+
 # Threat model & scope
 
 > These are the whole point of the project. Treat any change that weakens one of the

@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Jaxxen
+
 #
 # Full-boot smoke test. Builds a ccvm with a stub `claude` (tests/stub-claude.sh) and boots
 # the REAL VM to check the guarantees that need an actual guest: that the forwarded argv
@@ -124,7 +127,8 @@ grep -qa '^GITSIGN:false$' <<<"$OUT" &&
 grep -qa '^GIT:ignore-present$' <<<"$OUT" &&
   ok "git: global ignore staged to the guest's default path" || no "git: global ignore missing"
 # extraClaudeMd: the ccvm-context global memory reached the guest as ~/.claude/CLAUDE.md, with
-# the baked blurb and the rw-mode "edits are live" note (so the agent knows where it is).
+# the baked blurb and the rw-mode "edits are live" note (so the agent knows where it is), and
+# without lib/ccvm-context.md's SPDX header (stripped in lib/defaults.nix).
 grep -qa '^CLAUDEMD:present$' <<<"$OUT" &&
   ok "claude-md: ccvm-context laid at the guest's ~/.claude/CLAUDE.md" ||
   no "claude-md: not present in the guest"
@@ -132,6 +136,9 @@ grep -qa '^CLAUDEMD:blurb$' <<<"$OUT" &&
   ok "claude-md: the ccvm-context blurb survived into the guest" || no "claude-md: blurb missing"
 grep -qa '^CLAUDEMD:mode-rw$' <<<"$OUT" &&
   ok "claude-md: rw-mode 'edits are live' note present in the guest" || no "claude-md: rw mode note missing"
+grep -qa '^CLAUDEMD:no-spdx$' <<<"$OUT" &&
+  ok "claude-md: ccvm-context's SPDX header stripped before reaching the guest" ||
+  no "claude-md: SPDX header leaked into the guest's CLAUDE.md"
 # Default (nix.enable off): the store stays read-only and nix is absent — the lean default posture.
 grep -qa '^STORE:readonly$' <<<"$OUT" &&
   ok "default: /nix/store is read-only (no in-VM nix)" ||

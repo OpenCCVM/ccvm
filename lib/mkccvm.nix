@@ -1,3 +1,8 @@
+/*
+  SPDX-License-Identifier: MIT
+  Copyright (C) 2026 Jaxxen
+*/
+
 # mkCcvm: turn a ccvm configuration into the `ccvm` host wrapper package.
 #
 # It evaluates the guest NixOS system (guest/default.nix) and extracts the four boot

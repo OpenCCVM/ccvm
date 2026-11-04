@@ -1,3 +1,7 @@
+<!-- SPDX-License-Identifier: MIT
+  -- Copyright (C) 2026 Jaxxen
+  -->
+
 # Encrypted disk & wipe-on-exit
 
 The opt-in `vmDiskSize` (GiB) attaches a sparse disk image to back **bulk, non-secret** data:

@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Jaxxen
+
 # Local CI — runs the SAME checks as .github/workflows/flake-check.yml by pulling
 # each step's `run:` script straight from that workflow, so the command list lives
 # in exactly one place. Run before every commit.

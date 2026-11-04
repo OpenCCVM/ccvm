@@ -1,3 +1,7 @@
+<!-- SPDX-License-Identifier: MIT
+  -- Copyright (C) 2026 Jaxxen
+  -->
+
 # Running inside ccvm
 
 You are running inside **ccvm**, an ephemeral, RAM-only QEMU microVM sandbox — not the

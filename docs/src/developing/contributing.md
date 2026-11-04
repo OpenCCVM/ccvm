@@ -1,3 +1,7 @@
+<!-- SPDX-License-Identifier: MIT
+  -- Copyright (C) 2026 Jaxxen
+  -->
+
 # Contributing
 
 Thanks for helping out. ccvm is a small, security-focused project, so a few house rules keep it that
@@ -47,6 +51,8 @@ seed for the API key and the OAuth credential — keep them passing.
 - **Format before committing:** `nix fmt` (treefmt — `nixfmt` for Nix, `shfmt` for the shell
   scripts). CI enforces it via `checks.formatting`. See [Conventions](conventions.md) for the full
   set.
+- **SPDX header on every file:** MIT plus a `Copyright` line per author, in the file's comment
+  syntax. See [Conventions → SPDX headers](conventions.md#spdx-headers).
 
 ## macOS host support — help wanted
 

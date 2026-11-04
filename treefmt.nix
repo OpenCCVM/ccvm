@@ -1,3 +1,8 @@
+/*
+  SPDX-License-Identifier: MIT
+  Copyright (C) 2026 Jaxxen
+*/
+
 # treefmt config — consumed by treefmt-nix (wired in flake.nix). `nix fmt` applies it;
 # `nix flake check` enforces it via `checks.formatting`.
 #

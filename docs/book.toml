@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Jaxxen
+
 [book]
 title = "ccvm"
 description = "Run Claude Code in an ephemeral, RAM-only QEMU microVM with native-terminal fidelity."

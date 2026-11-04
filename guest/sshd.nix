@@ -1,3 +1,8 @@
+/*
+  SPDX-License-Identifier: MIT
+  Copyright (C) 2026 Jaxxen
+*/
+
 # Hardened, single-purpose sshd. This is the (invisible) transport the host wrapper
 # uses to drop the user straight into Claude Code with a real PTY — chosen over a
 # serial/virtio console specifically because SSH propagates termios and SIGWINCH, so

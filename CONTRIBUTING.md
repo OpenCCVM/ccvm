@@ -1,3 +1,7 @@
+<!-- SPDX-License-Identifier: MIT
+  -- Copyright (C) 2026 Jaxxen
+  -->
+
 # Contributing to ccvm
 
 Thanks for helping out. ccvm is a small, security-focused project, so a few house
@@ -42,6 +46,8 @@ tests grep the seed for the API key and the OAuth credential — keep them passi
 - **Format before committing:** `nix fmt` (treefmt — `nixfmt` for Nix, `shfmt` for the
   shell scripts). CI enforces it (`checks.formatting`), so an unformatted tree fails
   `nix flake check`. `shellcheck` additionally lints the wrapper and also runs at build.
+- **SPDX header on every file:** MIT plus a `Copyright` line per author, in the file's comment
+  syntax (nixfmt's block layout for Nix). `flake.lock` and `LICENSE` are exempt.
 
 ## License
 

@@ -1,3 +1,7 @@
+<!-- SPDX-License-Identifier: MIT
+  -- Copyright (C) 2026 Jaxxen
+  -->
+
 # About
 
 `ccvm` runs Claude Code inside an ephemeral, RAM-only QEMU microVM. Running `ccvm` in a project

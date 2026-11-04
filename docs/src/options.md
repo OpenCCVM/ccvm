@@ -1,3 +1,7 @@
+<!-- SPDX-License-Identifier: MIT
+  -- Copyright (C) 2026 Jaxxen
+  -->
+
 # Options
 
 Every setting below is a `programs.ccvm.*` option from the home-manager module. Most have a per-run

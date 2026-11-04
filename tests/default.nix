@@ -1,3 +1,8 @@
+/*
+  SPDX-License-Identifier: MIT
+  Copyright (C) 2026 Jaxxen
+*/
+
 # Automated checks for ccvm. Returns an attrset of derivations consumed by the flake's
 # `checks` output (so `nix flake check` runs them).
 #

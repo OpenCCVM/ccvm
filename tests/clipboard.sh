@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Jaxxen
+
 # Image-paste bridge checks (clipboard.images). No VM, no socat: the security-critical half of
 # the bridge is the HOST-SIDE reader (the part that talks to the real host clipboard), and the
 # property that matters is that it is IMAGE-ONLY — it must stream clipboard images but never

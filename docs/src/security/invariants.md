@@ -1,3 +1,7 @@
+<!-- SPDX-License-Identifier: MIT
+  -- Copyright (C) 2026 Jaxxen
+  -->
+
 # Security invariants — MUST NOT regress
 
 These are the whole point of the project. Treat any change that weakens one as a bug. They stop the

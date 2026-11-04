@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Jaxxen
+
 #
 # Egress-allowlist host-side tests. Driven (like host.sh) by the CCVM_DRYRUN hook, but
 # against a wrapper baked WITH an allowlist (tests/default.nix builds it). Asserts the

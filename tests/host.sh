@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Jaxxen
+
 #
 # Host-side guarantee tests for ccvm. These drive the *real* wrapper via its CCVM_DRYRUN
 # hook (populate the seed + run the config-staging loop, then stop before booting QEMU),

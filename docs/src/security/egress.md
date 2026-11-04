@@ -1,3 +1,7 @@
+<!-- SPDX-License-Identifier: MIT
+  -- Copyright (C) 2026 Jaxxen
+  -->
+
 # Egress control
 
 `egressAllowlist` is ccvm's primary hardening knob. Empty (the default) = open egress, just like

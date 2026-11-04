@@ -1,3 +1,8 @@
+/*
+  SPDX-License-Identifier: MIT
+  Copyright (C) 2026 Jaxxen
+*/
+
 # Builds stub-`claude` ccvm wrappers for tests/boot.sh. Returns an attrset so the driver can
 # build each posture by attribute:
 #

@@ -1,3 +1,7 @@
+<!-- SPDX-License-Identifier: MIT
+  -- Copyright (C) 2026 Jaxxen
+  -->
+
 # ccvm
 
 **CLI for isolating and securing the Claude Code experience with little-to-no added friction**

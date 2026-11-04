@@ -1,3 +1,7 @@
+<!-- SPDX-License-Identifier: MIT
+  -- Copyright (C) 2026 Jaxxen
+  -->
+
 # Image-paste bridge
 
 `clipboard.images` (default-on) makes Ctrl+V **image paste** work inside the VM, like native

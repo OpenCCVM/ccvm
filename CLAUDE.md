@@ -1,3 +1,7 @@
+<!-- SPDX-License-Identifier: MIT
+  -- Copyright (C) 2026 Jaxxen
+  -->
+
 # CLAUDE.md
 
 Working agreement for agents and contributors on **ccvm** — run Claude Code in an
@@ -126,6 +130,9 @@ is the hardening knob). — full detail: `docs/src/security/threat-model.md`.
 - **Format before committing:** `nix fmt` (nixfmt + shfmt); CI enforces it via `checks.formatting`.
   Markdown (incl. `docs/src/`) and the YAML workflows are excluded from treefmt. `statix`/`deadnix`
   stay green too.
+- **SPDX header on every file** (MIT + a `Copyright` line per author; nixfmt's block layout for
+  Nix; `flake.lock`/`LICENSE` exempt). `lib/ccvm-context.md`'s header is stripped before it reaches
+  the guest. — `docs/src/developing/conventions.md#spdx-headers`
 
 ## Docs site
 

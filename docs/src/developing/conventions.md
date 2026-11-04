@@ -1,3 +1,7 @@
+<!-- SPDX-License-Identifier: MIT
+  -- Copyright (C) 2026 Jaxxen
+  -->
+
 # Conventions
 
 ## Stage, don't commit — commits are signed with a hardware key
@@ -74,3 +78,19 @@ simulate `/dev/kvm` states portably.
 (`checks.formatting`), so an unformatted tree fails `nix flake check`. Markdown is **excluded** from
 treefmt (auto-reflow would wreck CLAUDE.md's char budget and the README), and `book.toml` is TOML,
 also unformatted. `statix` / `deadnix` stay green too.
+
+## SPDX headers {#spdx-headers}
+
+Every file starts with an SPDX block followed by one blank line: `SPDX-License-Identifier: MIT`
+(from `LICENSE`) and one `Copyright (C) <year> <name>` line per author, dated by that author's first
+commit to the file. A shebang stays on line 1, with the block right after it.
+
+- **Nix:** a block comment in nixfmt's layout (`/*` and `*/` on their own lines, body indented two
+  spaces). nixfmt rewrites any other block-comment layout, so `checks.formatting` would fail.
+- **Shell, YAML, TOML, dotfiles:** `#` lines.
+- **Markdown:** an HTML comment (`<!-- … -->`), which GitHub and mdBook don't render.
+
+Exempt: `flake.lock` (generated JSON, rewritten by every `nix flake update`) and `LICENSE` (the
+license text itself). `lib/ccvm-context.md` carries the header, but `lib/defaults.nix` strips it
+before the blurb becomes the guest's `~/.claude/CLAUDE.md`; `tests/boot.sh` asserts it never
+reaches the guest.

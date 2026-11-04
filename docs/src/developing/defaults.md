@@ -1,3 +1,7 @@
+<!-- SPDX-License-Identifier: MIT
+  -- Copyright (C) 2026 Jaxxen
+  -->
+
 # Deliberate defaults — do not reverse
 
 These defaults were chosen on purpose. Reversing one needs a *new* reason, not a rediscovery of the

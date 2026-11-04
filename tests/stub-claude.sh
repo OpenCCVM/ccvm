@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Jaxxen
+
 # Stub `claude` for ccvm boot tests (tests/boot.sh): instead of the real agent, print
 # exactly what the guest sees so the host can assert on it, then exit. No API calls.
 echo "CCVM_BOOT_MARKER"
@@ -57,11 +60,13 @@ fi
 echo "CCVM-ROOT-MARKER" >"$HOME/.claude/ccvm-root-probe" 2>/dev/null || true
 
 # ccvm-context global memory (extraClaudeMd): should be laid at ~/.claude/CLAUDE.md, carrying
-# the baked blurb and the runtime mode line. Report so boot.sh can assert it survived a boot.
+# the baked blurb and the runtime mode line, but not the source file's SPDX header. Report so
+# boot.sh can assert it survived a boot.
 if [ -r "$HOME/.claude/CLAUDE.md" ]; then
   echo "CLAUDEMD:present"
   grep -q 'inside .*ccvm' "$HOME/.claude/CLAUDE.md" 2>/dev/null && echo "CLAUDEMD:blurb"
   grep -q 'LIVE to the host' "$HOME/.claude/CLAUDE.md" 2>/dev/null && echo "CLAUDEMD:mode-rw"
+  grep -q 'SPDX-License-Identifier' "$HOME/.claude/CLAUDE.md" 2>/dev/null || echo "CLAUDEMD:no-spdx"
 else
   echo "CLAUDEMD:absent"
 fi

@@ -1,3 +1,8 @@
+/*
+  SPDX-License-Identifier: MIT
+  Copyright (C) 2026 Jaxxen
+*/
+
 {
   description = "ccvm — run Claude Code in a completely ephemeral microVM with zero setup";
 

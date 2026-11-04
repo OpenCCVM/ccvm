@@ -1,3 +1,8 @@
+/*
+  SPDX-License-Identifier: MIT
+  Copyright (C) 2026 Jaxxen
+*/
+
 # home-manager module: programs.ccvm.* -> installs the `ccvm` command.
 #
 # Each option feeds lib/mkccvm.nix, which builds a self-contained guest image and bakes
@@ -359,7 +364,7 @@ in
     extraClaudeMd = lib.mkOption {
       type = lib.types.lines;
       default = defaults.extraClaudeMd;
-      defaultText = lib.literalExpression "builtins.readFile ../lib/ccvm-context.md";
+      defaultText = lib.literalMD "the contents of `lib/ccvm-context.md`, without its SPDX header";
       description = ''
         Markdown staged as the guest's ~/.claude/CLAUDE.md (global memory) so the agent knows
         it is running inside ccvm — ephemeral, sandboxed, only the project directory shared —

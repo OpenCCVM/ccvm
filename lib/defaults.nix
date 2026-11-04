@@ -1,3 +1,8 @@
+/*
+  SPDX-License-Identifier: MIT
+  Copyright (C) 2026 Jaxxen
+*/
+
 # Single source of truth for ccvm's default configuration VALUES.
 #
 # Imported by BOTH lib/mkccvm.nix (the merge baseline for an explicit `mkCcvm { … }` call)
@@ -36,7 +41,17 @@
   clipboard = {
     images = true; # bridge host clipboard IMAGES into the VM so Ctrl+V image paste works (image-only, never host text). Per-run: CCVM_CLIPBOARD_IMAGES
   };
-  extraClaudeMd = builtins.readFile ./ccvm-context.md; # guest ~/.claude/CLAUDE.md ("you're in ccvm")
+  # guest ~/.claude/CLAUDE.md ("you're in ccvm"), without the source file's SPDX header
+  extraClaudeMd =
+    let
+      inherit (pkgs) lib;
+      raw = builtins.readFile ./ccvm-context.md;
+      sep = "  -->\n\n";
+    in
+    if lib.hasPrefix "<!-- SPDX-License-Identifier:" raw then
+      lib.concatStringsSep sep (lib.tail (lib.splitString sep raw))
+    else
+      raw;
   agentSudo = null; # null=auto: passwordless root in the guest, but DROPPED when egressAllowlist is set (so the agent can't `nft flush` the in-guest egress firewall). true/false forces it. Resolved in mkccvm.nix
   lockGuestMemory = false; # mlock guest RAM so it can't reach host swap
   vmDiskSize = 0; # GiB; 0=off. >0 attaches an encrypted ephemeral disk pool (/scratch; later writable store)

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Jaxxen
+
 # shellcheck shell=bash
 #
 # ccvm — boot an ephemeral microVM and drop the user straight into Claude Code.

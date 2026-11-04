@@ -1,3 +1,7 @@
+<!-- SPDX-License-Identifier: MIT
+  -- Copyright (C) 2026 Jaxxen
+  -->
+
 <!-- Keep the PR focused. Describe the WHY, not just the what. -->
 
 ## What & why

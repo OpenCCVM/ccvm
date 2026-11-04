@@ -1,3 +1,7 @@
+<!-- SPDX-License-Identifier: MIT
+  -- Copyright (C) 2026 Jaxxen
+  -->
+
 # Design decisions
 
 Settled decisions — don't relitigate. These were considered and decided; reopening one needs a

@@ -1,3 +1,7 @@
+<!-- SPDX-License-Identifier: MIT
+  -- Copyright (C) 2026 Jaxxen
+  -->
+
 # Slirp host-loopback reachability
 
 ccvm uses QEMU's built-in slirp user-mode networking (see

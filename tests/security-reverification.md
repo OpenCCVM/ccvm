@@ -1,3 +1,7 @@
+<!-- SPDX-License-Identifier: MIT
+  -- Copyright (C) 2026 Jaxxen
+  -->
+
 # ccvm — Security Re-Verification & Pentest Playbook
 
 You are auditing **ccvm** from *inside* a freshly-built VM, with **full pentesting

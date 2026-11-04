@@ -1,3 +1,8 @@
+/*
+  SPDX-License-Identifier: MIT
+  Copyright (C) 2026 Jaxxen
+*/
+
 # Guest-side runtime glue, all driven by the read-only "seed" 9p share the host
 # wrapper populates per invocation (/run/ccvm-seed):
 #

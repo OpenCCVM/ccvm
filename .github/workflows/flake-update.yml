@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (C) 2026 Jaxxen
+
 name: flake update
 
 # Weekly `nix flake update` (bumps the nixpkgs lock) → opens a PR for MANUAL review/merge.

@@ -1,3 +1,8 @@
+/*
+  SPDX-License-Identifier: MIT
+  Copyright (C) 2026 Jaxxen
+*/
+
 # The ccvm guest: a minimal, fast-booting, fully ephemeral NixOS system.
 #
 # Root is a tmpfs (writable, RAM-backed, discarded on power-off); /nix/store is a

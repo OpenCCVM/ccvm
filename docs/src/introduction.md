@@ -1,3 +1,7 @@
+<!-- SPDX-License-Identifier: MIT
+  -- Copyright (C) 2026 Jaxxen
+  -->
+
 # ccvm
 
 **Run Claude Code in an ephemeral, RAM-only QEMU microVM — with native-terminal fidelity and
