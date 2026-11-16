@@ -39,7 +39,7 @@ jobs:
         run: nix flake update
       - name: create pull request
         id: cpr
-        uses: peter-evans/create-pull-request@15733dbdfeedb4f7fdb73d13c6f5ac83b710fab8 # v8.1.1 (Apr 2026)
+        uses: peter-evans/create-pull-request@15733dbdfeedb4f7fdb73d13c6f5ac83b710fab8 # v8.1.2 (Apr 2026)
         with:
           token: ${{ steps.app-token.outputs.token }}
           commit-message: "flake: update inputs"
